@@ -50,7 +50,7 @@ func Dump(dest interface{}) string {
 	// https://play.golang.org/p/MuW6gwSAKi
 	// https://attilaolah.eu/2013/11/29/json-decoding-in-go/
 	// https://mariadesouza.com/2017/09/07/custom-unmarshal-json-in-golang/
-	j, err := json.MarshalIndent(dest, " ", "\t")
+	j, err := json.MarshalIndent(dest, " ", "   ")
 	if err != nil {
 		return err.Error()
 	}

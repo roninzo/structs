@@ -94,21 +94,21 @@ Value of 1st field : Roninzo.
 Value of Uint      : 123456.
 Value of Int       : 5.
 Dump               : {
-	"String": "Roninzo",
-	"Uint": 123456,
-	"Bool": true,
-	"Int": 5
-	}.
+   "String": "Roninzo",
+   "Uint": 123456,
+   "Bool": true,
+   "Int": 5
+ }.
 Set[Error]: wrong kind of value for field T.Bool. got: 'int' want: 'bool'.
 Value of String    : Roninzo.
 Value of Uint      : 654321.
 Value of Int       : 6.
 Dump               : {
-	"String": "Roninzo",
-	"Uint": 654321,
-	"Bool": true,
-	"Int": 6
-	}.
+   "String": "Roninzo",
+   "Uint": 654321,
+   "Bool": true,
+   "Int": 6
+ }.
 
 Verification       :
 t.String           : Roninzo.

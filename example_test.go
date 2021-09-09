@@ -67,20 +67,20 @@ func ExampleNew() {
 	// Value of Uint      : 123456.
 	// Value of Int       : 5.
 	// Dump               : {
-	//  	"String": "Roninzo",
-	//  	"Uint": 123456,
-	//  	"Bool": true,
-	//  	"Int": 5
+	//     "String": "Roninzo",
+	//     "Uint": 123456,
+	//     "Bool": true,
+	//     "Int": 5
 	//  }.
 	// Set[Error]: wrong kind of value for field T.Bool. got: 'int' want: 'bool'.
 	// Value of String    : Roninzo.
 	// Value of Uint      : 654321.
 	// Value of Int       : 6.
 	// Dump               : {
-	//  	"String": "Roninzo",
-	//  	"Uint": 654321,
-	//  	"Bool": true,
-	//  	"Int": 6
+	//     "String": "Roninzo",
+	//     "Uint": 654321,
+	//     "Bool": true,
+	//     "Int": 6
 	//  }.
 	//
 	// Verification       :
@@ -145,20 +145,20 @@ func ExampleNew_pointerFields() {
 	// Value of 0     : Roninzo
 	// Value of Count : 5
 	// Dump           : {
-	//  	"name": "Roninzo",
-	//  	"id": 123456,
-	//  	"enabled": true,
-	//  	"count": 5
+	//     "name": "Roninzo",
+	//     "id": 123456,
+	//     "enabled": true,
+	//     "count": 5
 	//  }.
 	// Error          : wrong kind of value for field Server.Enabled. got: '*int32' want: '*bool'
 	// Value of Name  : Roninzo
 	// Value of ID    : 654321
 	// Value of Count : 6
 	// Dump           : {
-	//  	"name": "Roninzo",
-	//  	"id": 654321,
-	//  	"enabled": true,
-	//  	"count": 6
+	//     "name": "Roninzo",
+	//     "id": 654321,
+	//     "enabled": true,
+	//     "count": 6
 	//  }.
 	//
 	// Verification   :
@@ -446,12 +446,12 @@ func ExampleStructValue_Dump() {
 
 	// Output:
 	// Dump: {
-	//  	"name": "Roninzo",
-	//  	"id": 123456,
-	//  	"enabled": true,
-	//  	"program": {
-	//  		"name": "Apache"
-	//  	}
+	//     "name": "Roninzo",
+	//     "id": 123456,
+	//     "enabled": true,
+	//     "program": {
+	//        "name": "Apache"
+	//     }
 	//  }
 }
 
@@ -967,24 +967,24 @@ func ExampleStructValue_Rows() {
 
 	// Output:
 	// Row: {
-	//  	"count": 5
+	//     "count": 5
 	//  }.
 	// StructValue: {
-	//  	"value": {
-	//  		"count": 5
-	//  	},
-	//  	"rows": [
-	//  		{
-	//  			"count": 5
-	//  		},
-	//  		{
-	//  			"count": 6
-	//  		}
-	//  	],
-	//  	"max_row": 2,
-	//  	"kinds": "ptr,slice,struct",
-	//  	"parent": "",
-	//  	"error": null
+	//     "value": {
+	//        "count": 5
+	//     },
+	//     "rows": [
+	//        {
+	//           "count": 5
+	//        },
+	//        {
+	//           "count": 6
+	//        }
+	//     ],
+	//     "max_row": 2,
+	//     "kinds": "ptr,slice,struct",
+	//     "parent": "",
+	//     "error": null
 	//  }.
 	// Len: 2.
 	// MaxRow: 1.
