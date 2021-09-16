@@ -26,7 +26,7 @@ func (s *StructValue) Rows() (*StructRows, error) {
 		}
 		return nil, ErrNoRows
 	}
-	return nil, errNoStructs
+	return nil, ErrNoStructs
 }
 
 /*   I m p l e m e n t a t i o n   */
@@ -64,7 +64,7 @@ func (r *StructRows) Columns() ([]string, error) {
 	if !r.isClosed() {
 		return r.Fields().Names(), nil
 	}
-	return nil, errRowsClosed
+	return nil, ErrRowsClosed
 }
 
 // Next prepares the next result row for reading an element from the slice of struct.

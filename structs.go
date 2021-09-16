@@ -37,15 +37,15 @@
 // Support
 //
 // The following input are supported throughout the package:
-//   ----------------------------------------------------------------
+//
 //   Types   Description                     Example
-//   ----------------------------------------------------------------
+//
 //   T       a struct                        New(t)
 //   *T      a pointer to a struct           New(&t)
 //   []T     a slice of struct               New([]T{t})
 //   *[]T    a pointer to a slice of struct  New(&[]T{t})
 //   []*T    a slice of pointers to struct   New([]*T{&t})
-//   ----------------------------------------------------------------
+//
 //
 // NOTE: See the findStruct method for details on the above scenarios.
 //
@@ -64,34 +64,35 @@
 // helpers.go.
 //
 // The following table summarizes the above statements:
-//   ----------------------------------------------------------------
-//   Usage          Applicable Go Files  Description
-//   ----------------------------------------------------------------
-//   Objects        structs.go           StructValue object
-//                  field.go             StructField object
-//                  fields.go            StructFields object
-//                  rows.go              StructRows object
-//   ----------------------------------------------------------------
-//   Helpers        helpers.go           Wrapper object functions
-//   ----------------------------------------------------------------
+//
+//   Usage     Applicable Go Files  Description
+//
+//   Objects   structs.go           StructValue object
+//             field.go             StructField object
+//             fields.go            StructFields object
+//             rows.go              StructRows object
+//
+//   Helpers   helpers.go           Wrapper object functions
+//
 //
 // All objects in this package are linked to the main StructValue object.
 // The relationships between each one of them are as follow:
+//
 //   +--------------+
-//   | *StructValue |<----------------------------------------------+
-//   +----+---------+                                               |
-//        |                                                         |
-//        |                     +---------------+                   |
-//        +-----> Field(x) ---->| *StructField  |----> Parent ------+
-//        |                     +---------------+                   |
-//        |                                                         |
-//        |                     +---------------+                   |
-//        +-----> Fields() ---->| *StructFields |----> Parent() ----+
-//        |                     +---------------+                   |
-//        |                                                         |
-//        |                     +---------------+                   |
-//        +-----> Rows() ------>| *StructRows   |----> Parent ------+
-//                              +---------------+
+//   | *StructValue |<------------------------------------------+
+//   +----+---------+                                           |
+//        |                                                     |
+//        |                  +---------------+                  |
+//        +---> Field(x) --->| *StructField  |---> Parent ----->+
+//        |                  +---------------+                  |
+//        |                                                     |
+//        |                  +---------------+                  |
+//        +---> Fields() --->| *StructFields |---> Parent() --->+
+//        |                  +---------------+                  |
+//        |                                                     |
+//        |                  +---------------+                  |
+//        +---> Rows() ----->| *StructRows   |---> Parent ----->+
+//                           +---------------+
 //
 // NOTE: For an exhaustive illustration of package capabilities, please refer
 // to the following file: https://github.com/roninzo/structs/example_test.go.
@@ -229,9 +230,8 @@
 //   }
 //   defer rows.Close()
 //   for rows.Next() {
-//      // Add an "s" to the Property field
 //      f := rows.Field("Property")
-//      f.Set(f.String() + "s")
+//      f.Set(f.String() + "s")        // adds an "s" to the Property field
 //      fmt.Printf("%s: %s.\n", f.Name(), f.String())
 //   }
 //
@@ -254,7 +254,7 @@
 //      if same {
 //         fmt.Println("t and t2 are the same")
 //      }
-//      err = structs.SetField(t2, "Property", "Cloned")
+//      t2.Property = "Cloned"
 //      if err != nil {
 //         return err
 //      }
@@ -438,7 +438,7 @@ func (s *StructValue) Debug() string {
 		Parent: p,
 		Error:  s.Error,
 	}
-	return Dump(d)
+	return Sprint(d)
 }
 
 // CanSet reports whether the value of StructValue can be changed.
@@ -458,7 +458,10 @@ func (s *StructValue) Multiple() bool {
 // NumField returns the number of fields in the struct.
 // This method is not recursive, which means that nested structs must be dealt with explicitly.
 func (s *StructValue) NumField() int {
-	return s.Type().NumField()
+	if s.fieldsByIndex == nil {
+		s.getFields()
+	}
+	return len(s.fieldsByIndex)
 }
 
 // FindStruct recursively finds and returns the StructValue object
@@ -539,11 +542,11 @@ func (s *StructValue) Path() string {
 	return Kinds(s.kinds...)
 }
 
-// Dump returns struct as a string, similar to the Values method, but in a json indented format.
+// Sprint returns struct as a string, similar to the Values method, but in a json indented format.
 // When the struct was not found, it returns zero-value string.
 // Unexported struct fields will be neglected.
-func (s *StructValue) Dump() string {
-	return Dump(s.value.Interface())
+func (s *StructValue) Sprint() string {
+	return Sprint(s.value.Interface())
 }
 
 // Contains returns index field of struct inside interface dest.
@@ -612,13 +615,39 @@ func (s *StructValue) HasField(dest interface{}, arg interface{}) (bool, error) 
 func (s *StructValue) Import(c *StructValue) error {
 	for _, field := range s.Fields() {
 		if field.CanSet() {
-			v := field.value()
+			v := field.value
 			f := c.Field(field.Name())
 			if err := c.Err(); err != nil {
 				return err
 			}
+			// format := "%s.Field: %s, Embedded: %t, Exported: %t, Settable: %t\n%+v\n"
+			// fmt.Printf(format,
+			// 	c.Name(),
+			// 	f.Name(),
+			// 	f.IsEmbedded(),
+			// 	f.IsExported(),
+			// 	f.CanSet(),
+			// 	f.field)
+			//
+			// Organization.Name: GormModel, Embedded: true, Exported: true, Settable: true
+			// {Name:GormModel PkgPath: Type:models.GormModel Tag: Offset:0 Index:[0] Anonymous:true}
+			//
+			// fmt.Printf(format,
+			// 	s.Name(),
+			// 	field.Name(),
+			// 	field.IsEmbedded(),
+			// 	field.IsExported(),
+			// 	field.CanSet(),
+			// 	field.field)
+			//
+			// CreateOrganizationRes.Name: ID, Embedded: false, Exported: true, Settable: true
+			// {Name:ID PkgPath: Type:uint Tag:json:"id" example:"12" Offset:0 Index:[0] Anonymous:false}
+			//
 			x := f.Value()
 			v.Set(x)
+			//
+			// panic: reflect.Set: value of type models.GormModel is not assignable to type uint
+			//
 		}
 	}
 	return nil
@@ -630,7 +659,7 @@ func (s *StructValue) Import(c *StructValue) error {
 func (s *StructValue) Forward(c *StructValue) error {
 	for _, field := range s.Fields() {
 		if field.CanSet() {
-			v := field.value()
+			v := field.value
 			f := c.Field(field.Name())
 			if err := c.Err(); err != nil {
 				return err
@@ -653,7 +682,7 @@ func (s *StructValue) MapFunc(handler func(reflect.Value) error) (*StructValue, 
 					return s, err
 				}
 			} else if f.CanSet() {
-				if err := handler(f.Value()); err != nil {
+				if err := handler(f.value); err != nil {
 					return s, err
 				}
 			}
@@ -722,7 +751,7 @@ func (s *StructValue) getElem(v reflect.Value, t reflect.Type) (rv reflect.Value
 	if t.Kind() == reflect.Slice {
 		s.rows = v
 	}
-	rv, rt, err := Elem(v, t)
+	rv, rt, err := structValueElem(v, t)
 	if err != nil {
 		s.wrapErr(err)
 	}
@@ -740,12 +769,20 @@ func (s *StructValue) appendKind(t reflect.Type) {
 
 // getFields loads and saves all the struct fields.
 // This method is not recursive, which means that nested structs must be dealt with explicitly.
+//
+// NOTE(roninzo): getFields indexes will not necessary follow the top level struct
+// filed indexes. Indeed, if any anonymous/embedded struct are found in the immediate list of
+// fields, those will be expanded and their related fields will explicitely be parsed, potentially
+// pushing remaining struct fields further down the order.
 func (s *StructValue) getFields() {
 	if s.fieldsByIndex == nil {
-		s.initFields()
-	}
-	for i := 0; i < s.NumField(); i++ {
-		s.loadField(i)
+		m := make(map[int]unembeddeds)
+		explodeEmbedded(s.value, s.value.Type(), m, nil, nil, nil)
+		n := len(m)
+		s.initFields(n)
+		for i := 0; i < n; i++ {
+			s.loadField(m[i].Index, m[i].Indexes, m[i].Value, m[i].StructField)
+		}
 	}
 }
 
@@ -753,11 +790,15 @@ func (s *StructValue) getFields() {
 // field, getFieldByIndex returns nil and error is saved in StructValue.
 func (s *StructValue) getFieldByIndex(i int) *StructField {
 	if s.fieldsByIndex == nil {
-		s.initFields()
+		s.getFields()
 	}
-	if OutOfRange < i && i < s.NumField() {
-		return s.loadField(i)
+	if OutOfRange < i && i < s.NumField() { // Try cache first
+		return s.fieldsByIndex[i]
 	}
+	// DEPRECATED(roninzo):
+	// if f, ok := s.Type().FieldByIndex(i); ok { // Lookup using Go reflection
+	// 	return s.loadField(f.Index[0])
+	// }
 	s.setErrorf("invalid field index %d", i)
 	return nil
 }
@@ -766,35 +807,40 @@ func (s *StructValue) getFieldByIndex(i int) *StructField {
 // field, getFieldByName returns nil and error is saved in StructValue.
 func (s *StructValue) getFieldByName(n string) *StructField {
 	if s.fieldsByIndex == nil {
-		s.initFields()
+		s.getFields()
 	}
 	if f, ok := s.fieldsByName[n]; ok { // Try cache first
 		return f
 	}
-	if f, ok := s.Type().FieldByName(n); ok { // Lookup using Go reflection
-		return s.loadField(f.Index[0])
-	}
+	// DEPRECATED(roninzo):
+	// if f, ok := s.Type().FieldByName(n); ok { // Lookup using Go reflection
+	// 	return s.loadField(f.Index[0])
+	// }
 	s.setErrorf("invalid field name %s", n)
 	return nil
 }
 
 // initFields initializes the struct fields attributes of StructValue.
-func (s *StructValue) initFields() {
-	s.fieldsByIndex = make(StructFields, s.NumField())
+func (s *StructValue) initFields(c ...int) {
+	total := 0
+	if len(c) > 0 {
+		total = c[0]
+	}
+	s.fieldsByIndex = make(StructFields, total)
 	s.fieldsByName = map[string]*StructField{}
 }
 
 // loadField loads, saves and returns the i'th struct field.
-func (s *StructValue) loadField(i int) *StructField {
-	if s.fieldsByIndex[i] == nil {
-		f := &StructField{
-			index:  i,
-			Parent: s,
-		}
-		s.fieldsByIndex[i] = f
-		s.fieldsByName[f.Name()] = f
+func (s *StructValue) loadField(i int, x []int, v reflect.Value, sf reflect.StructField) {
+	f := &StructField{
+		index:   i,
+		indexes: x,
+		value:   v,
+		field:   sf,
+		Parent:  s,
 	}
-	return s.fieldsByIndex[i]
+	s.fieldsByIndex[i] = f
+	s.fieldsByName[f.Name()] = f
 }
 
 // contains returns index field of struct inside interface dest.
@@ -816,13 +862,20 @@ func (s *StructValue) contains(v reflect.Value) int {
 // getRow returns the StructRows object, which is mainly used to loop through elements of the
 // slice of structs. If s is not a slice of structs, nothing happens except saving an internal
 // error.
-func (s *StructValue) getRow(i int) error {
+func (s *StructValue) getRow(rownum int) error {
 	if s.Multiple() {
 		if n := s.rows.Len(); n > 0 {
-			if OutOfRange < i && i < n {
-				s.value = s.rows.Index(i)
+			if OutOfRange < rownum && rownum < n {
+				//
+				// Update StructValue value
+				s.value = s.rows.Index(rownum)
 				if s.value.Kind() == reflect.Ptr {
 					s.value = s.value.Elem()
+				}
+				//
+				// Update StructField values
+				for _, f := range s.fieldsByIndex {
+					f.value = s.value.FieldByIndex(f.indexes)
 				}
 				return s.setErr(nil)
 			}
@@ -830,7 +883,7 @@ func (s *StructValue) getRow(i int) error {
 		}
 		return s.setErr(ErrNoRows)
 	}
-	return s.setErr(errNoStructs)
+	return s.setErr(ErrNoStructs)
 }
 
 // setErr sets error to StructValue.

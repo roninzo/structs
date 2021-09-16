@@ -95,14 +95,20 @@ func TestFieldInvalid(t *testing.T) {
 }
 
 func TestFieldInvalidArg(t *testing.T) {
+	type T2 struct {
+		String string
+		PtrInt *int
+	}
+
 	type T1 struct {
 		A string
 		B *int
 		C bool
 		D time.Duration
 		E error
-		reflect.Kind
 		T time.Time
+		reflect.Value
+		T2
 	}
 
 	t1 := T1{
@@ -111,8 +117,9 @@ func TestFieldInvalidArg(t *testing.T) {
 		false,
 		5 * time.Minute,
 		errors.New("test error"),
-		reflect.Int64,
 		time.Date(2021, time.August, 3, 13, 59, 35, 0, time.UTC),
+		reflect.ValueOf(time.Now()),
+		T2{"t2 string", nil},
 	}
 
 	s, err := New(&t1)
@@ -134,11 +141,6 @@ func TestFieldInvalidArg(t *testing.T) {
 	assert.Equal(t, true, f.CanDuration())
 	assert.Equal(t, 5*time.Minute, f.Duration())
 
-	f = s.Field(5)
-	assert.Equal(t, true, f.IsValid())
-	assert.Equal(t, true, f.IsEmbedded())
-	assert.Equal(t, "Kind", f.Name())
-
 	f = s.Field("E")
 	assert.Equal(t, true, f.CanError())
 	assert.Equal(t, "test error", f.Error().Error())
@@ -147,6 +149,16 @@ func TestFieldInvalidArg(t *testing.T) {
 	mysqlFormat := "2006-01-02 15:04:05"
 	assert.Equal(t, true, f.CanTime())
 	assert.Equal(t, "2021-08-03 13:59:35", f.Time().Format(mysqlFormat))
+
+	f = s.Field(6) // Value (reflect.Value)
+	assert.Equal(t, true, f.IsValid())
+	assert.Equal(t, true, f.IsEmbedded())
+	assert.Equal(t, reflect.Struct, f.Kind())
+
+	f = s.Field(7) // T2.String
+	assert.Equal(t, true, f.IsValid())
+	assert.Equal(t, false, f.IsEmbedded())
+	assert.Equal(t, "String", f.Name())
 
 	f = s.Field(true)
 	err = s.Err()

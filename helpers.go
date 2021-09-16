@@ -215,7 +215,7 @@ func Compare(dest, src interface{}) bool {
 func Replace(dest, old, new interface{}, n int) (interface{}, error) {
 	// ctx will be the context error returned
 	// by this func if anything goes wrong
-	ctx := errNotReplaced.Error()
+	ctx := ErrNotReplaced.Error()
 	src, err := Clone(dest)
 	if err != nil {
 		return nil, errors.Wrap(err, ctx)

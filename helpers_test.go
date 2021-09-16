@@ -292,7 +292,7 @@ func TestHelperReplace(t *testing.T) {
 	// assert.Equal(t, 12334, value.(*testStruct).TestComplex64)
 
 	// value, err = Replace(&ts, complex64(12333), float32(12334), ReplaceAll)
-	// assert.Equal(t, errNotReplaced, err)
+	// assert.Equal(t, ErrNotReplaced, err)
 
 	value, err := Replace(&ts, "test", "new", 2)
 	assert.Equal(t, nil, err)

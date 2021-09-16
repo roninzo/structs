@@ -1,7 +1,8 @@
 Golang structs
 [![license](https://img.shields.io/badge/license-MIT-green "The MIT License (MIT)")](LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/roninzo/structs.svg)](https://pkg.go.dev/github.com/roninzo/structs)
 [![build](https://img.shields.io/badge/build-passing-green "Go build status")](structs.go)
-[![coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen?logo=codecov "Unit tests coverage")](structs_test.go) 
+[![coverage](https://img.shields.io/badge/coverage-78%25-yellowgreen?logo=codecov "Unit tests coverage")](structs_test.go) 
 =======
 
 Package structs implements a generic interface for manipulating Go structs.
@@ -52,7 +53,7 @@ func main() {
 	fmt.Printf("Value of 1st field : %v.\n", s.Field(0).Value())
 	fmt.Printf("Value of Uint      : %v.\n", s.Field("Uint").Value())
 	fmt.Printf("Value of Int       : %v.\n", s.Field("Int").Value())
-	fmt.Printf("Dump               : %s.\n", s.Dump())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
 
 	err = s.Field("Uint").Set(uint(654321))
 	if err != nil {
@@ -72,7 +73,7 @@ func main() {
 	fmt.Printf("Value of String    : %s.\n", s.Field("String").String()) // syntax for %s verb
 	fmt.Printf("Value of Uint      : %d.\n", s.Field("Uint").Uint())     // syntax for %d verb
 	fmt.Printf("Value of Int       : %d.\n", s.Field("Int").Int())       // syntax for %d verb
-	fmt.Printf("Dump               : %s.\n", s.Dump())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
 	fmt.Printf("\nVerification       :\n")
 	fmt.Printf("t.String           : %s.\n", t.String)
 	fmt.Printf("t.Uint             : %d.\n", t.Uint)
@@ -88,27 +89,27 @@ go run main.go
 
 ### Output
 
-```yaml
+```
 Name               : T.
 Value of 1st field : Roninzo.
 Value of Uint      : 123456.
 Value of Int       : 5.
-Dump               : {
-   "String": "Roninzo",
-   "Uint": 123456,
-   "Bool": true,
-   "Int": 5
- }.
+Sprint: {
+	"String": "Roninzo",
+	"Uint": 123456,
+	"Bool": true,
+	"Int": 5
+	}.
 Set[Error]: wrong kind of value for field T.Bool. got: 'int' want: 'bool'.
 Value of String    : Roninzo.
 Value of Uint      : 654321.
 Value of Int       : 6.
-Dump               : {
-   "String": "Roninzo",
-   "Uint": 654321,
-   "Bool": true,
-   "Int": 6
- }.
+Sprint: {
+	"String": "Roninzo",
+	"Uint": 654321,
+	"Bool": true,
+	"Int": 6
+	}.
 
 Verification       :
 t.String           : Roninzo.
@@ -163,6 +164,8 @@ ok  	github.com/roninzo/structs	10.581s
 - [github.com/PumpkinSeed/structs](https://github.com/PumpkinSeed/structs)
 <!-- 
 - https://go101.org/article/reflection.html
+- https://github.com/zinuhe/golang-struct-interface
+- https://github.com/jinzhu/copier
 - [github.com/hvoecking/10772475](https://gist.github.com/hvoecking/10772475)
 - [github.com/Ompluscator/dynamic-struct](https://github.com/Ompluscator/dynamic-struct)
 - [github.com/r3labs/diff](https://github.com/r3labs/diff)

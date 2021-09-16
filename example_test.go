@@ -35,7 +35,7 @@ func ExampleNew() {
 	fmt.Printf("Value of 1st field : %v.\n", s.Field(0).Value())
 	fmt.Printf("Value of Uint      : %v.\n", s.Field("Uint").Value())
 	fmt.Printf("Value of Int       : %v.\n", s.Field("Int").Value())
-	fmt.Printf("Dump               : %s.\n", s.Dump())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
 
 	err = s.Field("Uint").Set(uint(654321))
 	if err != nil {
@@ -55,7 +55,7 @@ func ExampleNew() {
 	fmt.Printf("Value of String    : %s.\n", s.Field("String").String()) // syntax for %s verb
 	fmt.Printf("Value of Uint      : %d.\n", s.Field("Uint").Uint())     // syntax for %d verb
 	fmt.Printf("Value of Int       : %d.\n", s.Field("Int").Int())       // syntax for %d verb
-	fmt.Printf("Dump               : %s.\n", s.Dump())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
 	fmt.Printf("\nVerification       :\n")
 	fmt.Printf("t.String           : %s.\n", t.String)
 	fmt.Printf("t.Uint             : %d.\n", t.Uint)
@@ -66,21 +66,21 @@ func ExampleNew() {
 	// Value of 1st field : Roninzo.
 	// Value of Uint      : 123456.
 	// Value of Int       : 5.
-	// Dump               : {
-	//     "String": "Roninzo",
-	//     "Uint": 123456,
-	//     "Bool": true,
-	//     "Int": 5
+	// Sprint: {
+	//  	"String": "Roninzo",
+	//  	"Uint": 123456,
+	//  	"Bool": true,
+	//  	"Int": 5
 	//  }.
 	// Set[Error]: wrong kind of value for field T.Bool. got: 'int' want: 'bool'.
 	// Value of String    : Roninzo.
 	// Value of Uint      : 654321.
 	// Value of Int       : 6.
-	// Dump               : {
-	//     "String": "Roninzo",
-	//     "Uint": 654321,
-	//     "Bool": true,
-	//     "Int": 6
+	// Sprint: {
+	//  	"String": "Roninzo",
+	//  	"Uint": 654321,
+	//  	"Bool": true,
+	//  	"Int": 6
 	//  }.
 	//
 	// Verification       :
@@ -113,7 +113,7 @@ func ExampleNew_pointerFields() {
 	fmt.Printf("Value of ID    : %v\n", s.Field("ID").PtrValue())
 	fmt.Printf("Value of 0     : %v\n", s.Field(0).PtrValue())
 	fmt.Printf("Value of Count : %v\n", s.Field("Count").PtrValue())
-	fmt.Printf("Dump           : %s.\n", s.Dump())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
 
 	err = s.Field("ID").Set(structs.PtrUint(uint(654321)))
 	if err != nil {
@@ -133,7 +133,7 @@ func ExampleNew_pointerFields() {
 	fmt.Printf("Value of Name  : %v\n", s.Field("Name").PtrValue())
 	fmt.Printf("Value of ID    : %v\n", s.Field("ID").PtrValue())
 	fmt.Printf("Value of Count : %v\n", s.Field("Count").PtrValue())
-	fmt.Printf("Dump           : %s.\n", s.Dump())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
 	fmt.Printf("\nVerification   :\n")
 	fmt.Printf("server.Name    : %s\n", *server.Name)
 	fmt.Printf("server.ID      : %d\n", *server.ID)
@@ -144,21 +144,21 @@ func ExampleNew_pointerFields() {
 	// Value of ID    : 123456
 	// Value of 0     : Roninzo
 	// Value of Count : 5
-	// Dump           : {
-	//     "name": "Roninzo",
-	//     "id": 123456,
-	//     "enabled": true,
-	//     "count": 5
+	// Sprint: {
+	//  	"name": "Roninzo",
+	//  	"id": 123456,
+	//  	"enabled": true,
+	//  	"count": 5
 	//  }.
 	// Error          : wrong kind of value for field Server.Enabled. got: '*int32' want: '*bool'
 	// Value of Name  : Roninzo
 	// Value of ID    : 654321
 	// Value of Count : 6
-	// Dump           : {
-	//     "name": "Roninzo",
-	//     "id": 654321,
-	//     "enabled": true,
-	//     "count": 6
+	// Sprint: {
+	//  	"name": "Roninzo",
+	//  	"id": 654321,
+	//  	"enabled": true,
+	//  	"count": 6
 	//  }.
 	//
 	// Verification   :
@@ -442,16 +442,16 @@ func ExampleStructValue_Dump() {
 	}
 
 	// json struct tag omits Password and Count
-	fmt.Printf("Dump: %s\n", s.Dump())
+	fmt.Printf("Sprint: %s\n", s.Sprint())
 
 	// Output:
-	// Dump: {
-	//     "name": "Roninzo",
-	//     "id": 123456,
-	//     "enabled": true,
-	//     "program": {
-	//        "name": "Apache"
-	//     }
+	// Sprint: {
+	//  	"name": "Roninzo",
+	//  	"id": 123456,
+	//  	"enabled": true,
+	//  	"program": {
+	//  		"name": "Apache"
+	//  	}
 	//  }
 }
 
@@ -940,7 +940,7 @@ func ExampleStructValue_Rows() {
 	if err != nil {
 		fmt.Printf("Columns[Error]: %v.\n", err)
 	}
-	fmt.Printf("Row: %s.\n", s.Dump())
+	fmt.Printf("Row: %s.\n", s.Sprint())
 	fmt.Printf("StructValue: %s.\n", s.Debug())
 	fmt.Printf("Len: %d.\n", rows.Len())
 	fmt.Printf("MaxRow: %d.\n", rows.MaxRow())
@@ -967,24 +967,24 @@ func ExampleStructValue_Rows() {
 
 	// Output:
 	// Row: {
-	//     "count": 5
+	//  	"count": 5
 	//  }.
 	// StructValue: {
-	//     "value": {
-	//        "count": 5
-	//     },
-	//     "rows": [
-	//        {
-	//           "count": 5
-	//        },
-	//        {
-	//           "count": 6
-	//        }
-	//     ],
-	//     "max_row": 2,
-	//     "kinds": "ptr,slice,struct",
-	//     "parent": "",
-	//     "error": null
+	//  	"value": {
+	//  		"count": 5
+	//  	},
+	//  	"rows": [
+	//  		{
+	//  			"count": 5
+	//  		},
+	//  		{
+	//  			"count": 6
+	//  		}
+	//  	],
+	//  	"max_row": 2,
+	//  	"kinds": "ptr,slice,struct",
+	//  	"parent": "",
+	//  	"error": null
 	//  }.
 	// Len: 2.
 	// MaxRow: 1.
@@ -1702,7 +1702,7 @@ type structTest struct {
 	Int             int                    `json:"int,omitempty"`
 	Uint            uint                   `json:"uint,omitempty"`
 	Float           float32                `json:"float,omitempty"`
-	Complex         complex128             `json:"complex,omitempty"` // `json:"-"` // crashes Dump!
+	Complex         complex128             `json:"complex,omitempty"` // `json:"-"` // crashes Sprint!
 	Bytes           []byte                 `json:"bytes,omitempty"`
 	Interface       interface{}            `json:"interface,omitempty"`
 	Error           error                  `json:"error,omitempty"`
@@ -1714,7 +1714,7 @@ type structTest struct {
 	PtrInt          *int                   `json:"pointer_int,omitempty"`
 	PtrUint         *uint                  `json:"pointer_uint,omitempty"`
 	PtrFloat        *float32               `json:"pointer_float,omitempty"`
-	PtrComplex      *complex128            `json:"pointer_complex,omitempty"` // `json:"-"` // crashes Dump!
+	PtrComplex      *complex128            `json:"pointer_complex,omitempty"` // `json:"-"` // crashes Sprint!
 	PtrError        *error                 `json:"pointer_error,omitempty"`
 	PtrTime         *time.Time             `json:"pointer_time,omitempty"`
 	PtrDuration     *time.Duration         `json:"pointer_duration,omitempty"`
@@ -1724,14 +1724,14 @@ type structTest struct {
 	MapInt          map[string]int         `json:"mapint,omitempty"`
 	MapUint         map[string]uint        `json:"map_uint,omitempty"`
 	MapFloat        map[string]float32     `json:"map_float,omitempty"`
-	MapComplex      map[string]complex128  `json:"map_complex,omitempty"` // `json:"-"` // crashes Dump!
+	MapComplex      map[string]complex128  `json:"map_complex,omitempty"` // `json:"-"` // crashes Sprint!
 	MapInterface    map[string]interface{} `json:"map_interface,omitempty"`
 	SliceString     []string               `json:"slice_string,omitempty"`
 	SliceBool       []bool                 `json:"slice_bool,omitempty"`
 	SliceInt        []int                  `json:"slice_int,omitempty"`
 	SliceUint       []uint                 `json:"slice_uint,omitempty"`
 	SliceFloat      []float32              `json:"slice_float,omitempty"`
-	SliceComplex    []complex128           `json:"slice_complex,omitempty"` // `json:"-"` // crashes Dump!
+	SliceComplex    []complex128           `json:"slice_complex,omitempty"` // `json:"-"` // crashes Sprint!
 	SliceInterface  []interface{}          `json:"slice_interface,omitempty"`
 	SlicePtrString  []*string              `json:"slice_pointer_string,omitempty"`
 	SlicePtrBool    []*bool                `json:"slice_pointer_bool,omitempty"`
@@ -1861,7 +1861,7 @@ var structX structTest = structTest{
 /*   S t r u c t F i e l d   -   L o c a l   F u n c t i o n s   */
 
 func printStruct(s *structTest) {
-	// fmt.Printf("%s", structs.Dump(t))
+	// fmt.Printf("%s", structs.Sprint(t))
 	// if err := json.NewEncoder(os.Stdout).Encode(s); err != nil {
 	// 	panic(err)
 	// }

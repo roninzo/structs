@@ -9,15 +9,15 @@ import (
 )
 
 var (
-	errNotExported = errors.New("struct field is not exported")
-	errNotSettable = errors.New("struct field is not settable")
-	errNotNillable = errors.New("struct field is not nillable")
-	errNoStruct    = errors.New("struct not found")
-	errNoStructs   = errors.New("structs not found")
-	errNoField     = errors.New("struct field not found")
-	errNoFields    = errors.New("struct fields not found")
+	ErrNotExported = errors.New("struct field is not exported")
+	ErrNotSettable = errors.New("struct field is not settable")
+	ErrNotNillable = errors.New("struct field is not nillable")
+	ErrNoStruct    = errors.New("struct not found")
+	ErrNoStructs   = errors.New("structs not found")
+	ErrNoField     = errors.New("struct field not found")
+	ErrNoFields    = errors.New("struct fields not found")
 	ErrNoRow       = errors.New("struct row not found")
 	ErrNoRows      = errors.New("struct rows not found")
-	errRowsClosed  = errors.New("struct rows are closed")
-	errNotReplaced = errors.New("struct field old and new value types does not match") // could not replace value in struct
+	ErrRowsClosed  = errors.New("struct rows are closed")
+	ErrNotReplaced = errors.New("struct field old and new value types does not match") // could not replace value in struct
 )

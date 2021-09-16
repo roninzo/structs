@@ -19,8 +19,11 @@ import (
 // StructField represents a single struct field that encapsulates high level
 // functions around the field.
 type StructField struct {
-	index  int          // useful to pinpoint which field in current struct `Parent`.
-	Parent *StructValue // field's own struct reference.
+	index   int                 // sequence index of field.
+	indexes []int               // absolute indexes of field inside struct.
+	value   reflect.Value       // struct field value.
+	field   reflect.StructField // struct field definition.
+	Parent  *StructValue        // field's own struct reference.
 }
 
 /*   C o n s t r u c t o r   */
@@ -62,7 +65,7 @@ func (s *StructValue) Field(dest interface{}) *StructField {
 // Useful for checking StructField is valid before use.
 func (f *StructField) IsValid() bool {
 	if f.Parent != nil && f.index != OutOfRange {
-		return f.value().IsValid()
+		return f.value.IsValid()
 	}
 	return false
 }
@@ -76,7 +79,7 @@ func (f *StructField) Index() int {
 // Name returns returns the name of StructField, unless it was invalid.
 // In which case, Name returns zero-value string.
 func (f *StructField) Name() string {
-	return f.field().Name
+	return f.field.Name
 }
 
 // Namespace is similar to the Name method, except that it includes its related struct names
@@ -101,12 +104,12 @@ func (f *StructField) Namespace() (n string) {
 
 // Type returns the underlying type of the field.
 func (f *StructField) Type() reflect.Type {
-	return f.value().Type()
+	return f.value.Type()
 }
 
 // Kind returns the fields kind, such as "string", "int", "bool", etc ..
 func (f *StructField) Kind() reflect.Kind {
-	return f.value().Type().Kind()
+	return f.value.Type().Kind()
 }
 
 // Tag returns the value associated with key in the tag string.
@@ -114,13 +117,13 @@ func (f *StructField) Kind() reflect.Kind {
 // Otherwise the returned value will be the empty string. The ok return value
 // reports whether the value was explicitly set in the tag string.
 func (f *StructField) Tag(key string) (string, bool) {
-	return f.field().Tag.Lookup(key)
+	return f.field.Tag.Lookup(key)
 }
 
 // IsAnonymous returns true if the given field is an anonymous field, meaning a field
 // having no name. This obviously related to the use of the Name method.
 func (f *StructField) IsAnonymous() bool {
-	return f.field().Anonymous
+	return f.field.Anonymous
 }
 
 // IsEmbedded is a alias to the IsAnonymous method.
@@ -131,14 +134,14 @@ func (f *StructField) IsEmbedded() bool {
 
 // Interface returns true if underlying value of the field is modifiable.
 func (f *StructField) CanSet() bool {
-	return f.value().CanSet() // Unexported struct fields will be neglected.
+	return f.value.CanSet() // Unexported struct fields will be neglected.
 }
 
 // ... NOTE: Review/improve doc.
 // IsExported returns true if the given field is exported and its json tag is
 // not equal to "-". Those fields are neglected for getter and setter methods.
 func (f *StructField) IsExported() bool {
-	if ok := f.field().PkgPath == ""; ok {
+	if ok := f.field.PkgPath == ""; ok {
 		return true // if f.IsHidden() { return false }
 	}
 	return false
@@ -167,7 +170,7 @@ func (f *StructField) IsHidden() bool {
 // Zero returns field's type specific zero value. For instance, the zero-value
 // of a string field is "", of an int is 0, and so on.
 func (f *StructField) Zero() reflect.Value {
-	v := f.value()
+	v := f.value
 	return Zero(v)
 }
 
@@ -175,7 +178,7 @@ func (f *StructField) Zero() reflect.Value {
 // Unexported struct fields will be neglected.
 func (f *StructField) IsZero() bool {
 	if f.IsExported() {
-		return reflect.DeepEqual(f.Interface(), f.Zero().Interface()) // v := f.value(); z := Zero(v); return v == z
+		return reflect.DeepEqual(f.Interface(), f.Zero().Interface()) // v := f.value; z := Zero(v); return v == z
 	}
 	return false
 }
@@ -184,7 +187,7 @@ func (f *StructField) IsZero() bool {
 // interface, map, pointer, or slice value; if it is not, IsNil returns nil.
 // Unexported struct fields will be neglected.
 func (f *StructField) IsNil() bool {
-	v := f.value()
+	v := f.value
 	if canNil(v) {
 		return v.IsNil()
 	}
@@ -200,7 +203,7 @@ func (f *StructField) Equal(x *StructField) bool {
 	if x == nil {
 		return false
 	}
-	return f.equal(x.value()) != OutOfRange
+	return f.equal(x.value) != OutOfRange
 }
 
 // G e t t e r s
@@ -217,21 +220,21 @@ func (f *StructField) Get() (interface{}, error) {
 	return v.Interface(), nil
 }
 
-func (f *StructField) Time() time.Time         { v := f.value(); return Time(v) }
-func (f *StructField) Duration() time.Duration { v := f.value(); return Duration(v) }
-func (f *StructField) Error() error            { v := f.value(); return Error(v) }
-func (f *StructField) String() string          { v := f.value(); return v.String() }
-func (f *StructField) Bool() bool              { v := f.value(); return v.Bool() }
-func (f *StructField) Int() int64              { v := f.value(); return v.Int() }
-func (f *StructField) Uint() uint64            { v := f.value(); return v.Uint() }
-func (f *StructField) Float() float64          { v := f.value(); return v.Float() }
-func (f *StructField) Complex() complex128     { v := f.value(); return v.Complex() }
-func (f *StructField) Bytes() []byte           { v := f.value(); return v.Bytes() }
-func (f *StructField) Interface() interface{}  { v := f.value(); return v.Interface() }
+func (f *StructField) Time() time.Time         { v := f.value; return Time(v) }
+func (f *StructField) Duration() time.Duration { v := f.value; return Duration(v) }
+func (f *StructField) Error() error            { v := f.value; return Error(v) }
+func (f *StructField) String() string          { v := f.value; return v.String() }
+func (f *StructField) Bool() bool              { v := f.value; return v.Bool() }
+func (f *StructField) Int() int64              { v := f.value; return v.Int() }
+func (f *StructField) Uint() uint64            { v := f.value; return v.Uint() }
+func (f *StructField) Float() float64          { v := f.value; return v.Float() }
+func (f *StructField) Complex() complex128     { v := f.value; return v.Complex() }
+func (f *StructField) Bytes() []byte           { v := f.value; return v.Bytes() }
+func (f *StructField) Interface() interface{}  { v := f.value; return v.Interface() }
 
 // Struct returns nested struct from field or nil if f is not a nested struct.
 func (f *StructField) Struct() *StructValue {
-	v := f.value()
+	v := f.value
 	s, err := New(v.Interface(), f.Parent)
 	if err != nil {
 		f.Parent.setErr(err)
@@ -244,20 +247,20 @@ func (f *StructField) Struct() *StructValue {
 // C h e c k e r s
 // Checker methods report whether type requested can be used without panicking.
 
-func (f *StructField) CanNil() bool       { v := f.value(); return canNil(v) }
-func (f *StructField) CanPtr() bool       { v := f.value(); return canPtr(v) }
-func (f *StructField) CanTime() bool      { v := f.value(); return canTime(v) }
-func (f *StructField) CanDuration() bool  { v := f.value(); return canDuration(v) }
-func (f *StructField) CanError() bool     { v := f.value(); return canError(v) }
-func (f *StructField) CanString() bool    { v := f.value(); return canString(v) }
-func (f *StructField) CanBool() bool      { v := f.value(); return canBool(v) }
-func (f *StructField) CanInt() bool       { v := f.value(); return canInt(v) }
-func (f *StructField) CanUint() bool      { v := f.value(); return canUint(v) }
-func (f *StructField) CanFloat() bool     { v := f.value(); return canFloat(v) }
-func (f *StructField) CanComplex() bool   { v := f.value(); return canComplex(v) }
-func (f *StructField) CanBytes() bool     { v := f.value(); return canBytes(v) }
-func (f *StructField) CanInterface() bool { v := f.value(); return canInterface(v) }
-func (f *StructField) CanStruct() bool    { v := f.value(); return canStruct(v) }
+func (f *StructField) CanNil() bool       { v := f.value; return canNil(v) }
+func (f *StructField) CanPtr() bool       { v := f.value; return canPtr(v) }
+func (f *StructField) CanTime() bool      { v := f.value; return canTime(v) }
+func (f *StructField) CanDuration() bool  { v := f.value; return canDuration(v) }
+func (f *StructField) CanError() bool     { v := f.value; return canError(v) }
+func (f *StructField) CanString() bool    { v := f.value; return canString(v) }
+func (f *StructField) CanBool() bool      { v := f.value; return canBool(v) }
+func (f *StructField) CanInt() bool       { v := f.value; return canInt(v) }
+func (f *StructField) CanUint() bool      { v := f.value; return canUint(v) }
+func (f *StructField) CanFloat() bool     { v := f.value; return canFloat(v) }
+func (f *StructField) CanComplex() bool   { v := f.value; return canComplex(v) }
+func (f *StructField) CanBytes() bool     { v := f.value; return canBytes(v) }
+func (f *StructField) CanInterface() bool { v := f.value; return canInterface(v) }
+func (f *StructField) CanStruct() bool    { v := f.value; return canStruct(v) }
 
 // S e t t e r s
 // Setter methods assigns x to the field f. no assignment is carried out if CanSet
@@ -266,9 +269,9 @@ func (f *StructField) CanStruct() bool    { v := f.value(); return canStruct(v) 
 // SetZero sets the field to its zero value.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetZero() error {
-	v, ctx := f.value(), fmt.Sprintf("could not set field %s to zero-value", f.Namespace())
+	v, ctx := f.value, fmt.Sprintf("could not set field %s to zero-value", f.Namespace())
 	if !v.CanSet() {
-		return errors.Wrap(errNotSettable, ctx)
+		return errors.Wrap(ErrNotSettable, ctx)
 	}
 	v.Set(Zero(v))
 	return nil
@@ -277,12 +280,12 @@ func (f *StructField) SetZero() error {
 // SetNil sets the field to its zero value.
 // Unsettable/Un-nillable struct fields will return an error.
 func (f *StructField) SetNil() error {
-	v, ctx := f.value(), fmt.Sprintf("could not set field %s to nil", f.Namespace())
+	v, ctx := f.value, fmt.Sprintf("could not set field %s to nil", f.Namespace())
 	if !v.CanSet() {
-		return errors.Wrap(errNotSettable, ctx)
+		return errors.Wrap(ErrNotSettable, ctx)
 	}
 	if !canNil(v) {
-		return errors.Wrap(errNotNillable, ctx)
+		return errors.Wrap(ErrNotNillable, ctx)
 	}
 	v.Set(Zero(v))
 	return nil
@@ -291,7 +294,7 @@ func (f *StructField) SetNil() error {
 // SetTime sets the field to the time.Time value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetTime(x time.Time) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.Set(reflect.ValueOf(x))
@@ -301,7 +304,7 @@ func (f *StructField) SetTime(x time.Time) {
 // SetDuration sets the field to the time.Duration value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetDuration(x time.Duration) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.Set(reflect.ValueOf(x))
@@ -311,7 +314,7 @@ func (f *StructField) SetDuration(x time.Duration) {
 // SetError sets the field to the error value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetError(x error) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.Set(reflect.ValueOf(x))
@@ -321,7 +324,7 @@ func (f *StructField) SetError(x error) {
 // SetString sets the field to the string value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetString(x string) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetString(x)
@@ -331,7 +334,7 @@ func (f *StructField) SetString(x string) {
 // SetBool sets the field to the bool value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetBool(x bool) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetBool(x)
@@ -341,7 +344,7 @@ func (f *StructField) SetBool(x bool) {
 // SetInt sets the field to the int64 value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetInt(x int64) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetInt(x)
@@ -351,7 +354,7 @@ func (f *StructField) SetInt(x int64) {
 // SetUint sets the field to the uint64 value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetUint(x uint64) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetUint(x)
@@ -361,7 +364,7 @@ func (f *StructField) SetUint(x uint64) {
 // SetFloat sets the field to the float64 value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetFloat(x float64) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetFloat(x)
@@ -371,7 +374,7 @@ func (f *StructField) SetFloat(x float64) {
 // SetComplex sets the field to the complex128 value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetComplex(x complex128) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetComplex(x)
@@ -381,7 +384,7 @@ func (f *StructField) SetComplex(x complex128) {
 // SetBytes sets the field to the slice of bytes value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetBytes(x []byte) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.SetBytes(x)
@@ -391,7 +394,7 @@ func (f *StructField) SetBytes(x []byte) {
 // SetInterface sets the field to the interface value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetInterface(x interface{}) { // NOTE: Not used!
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.Set(reflect.ValueOf(x))
@@ -401,7 +404,7 @@ func (f *StructField) SetInterface(x interface{}) { // NOTE: Not used!
 // SetStruct sets the field to the StructValue value x.
 // Unsettable struct fields will return an error.
 func (f *StructField) SetStruct(x *StructValue) {
-	v := f.value()
+	v := f.value
 	if v.CanSet() {
 		v := Preset(v)
 		v.Set(x.value)
@@ -411,11 +414,11 @@ func (f *StructField) SetStruct(x *StructValue) {
 // Value returns the underlying value of the field.
 // Unexported struct fields will be neglected.
 func (f *StructField) Value() reflect.Value {
-	v := f.value()
+	v := f.value
 	if f.IsExported() {
 		return v
 	}
-	f.Parent.setErrorsf(errNotExported, "could not get value of field %s", f.Namespace())
+	f.Parent.setErrorsf(ErrNotExported, "could not get value of field %s", f.Namespace())
 	t := v.Type()
 	return reflect.New(t).Elem()
 }
@@ -424,7 +427,7 @@ func (f *StructField) Value() reflect.Value {
 // are pointer to data types by returning the element of the pointer instead.
 // Unexported struct fields will be neglected.
 func (f *StructField) PtrValue() reflect.Value {
-	v := f.value()
+	v := f.value
 	t := v.Type()
 	if f.IsExported() {
 		if v.Kind() == reflect.Ptr {
@@ -437,7 +440,7 @@ func (f *StructField) PtrValue() reflect.Value {
 		}
 		return v
 	}
-	f.Parent.setErrorsf(errNotExported, "cannot get field value of %s", f.Namespace())
+	f.Parent.setErrorsf(ErrNotExported, "cannot get field value of %s", f.Namespace())
 	return reflect.New(t).Elem()
 }
 
@@ -458,14 +461,25 @@ func (f *StructField) AssignableTo(dest interface{}) bool {
 func (f *StructField) Set(dest interface{}) error {
 	fieldName := f.Namespace()
 	if !f.CanSet() {
-		return errors.Wrapf(errNotSettable, "could not set field %s", fieldName)
+		return errors.Wrapf(ErrNotSettable, "could not set field %s", fieldName)
 	}
 	if dest == nil {
 		return f.SetNil()
 	}
-	v := f.value() // v = Preset(v)
+	v := f.value
 	x := reflect.ValueOf(dest)
+	if canPtr(v) && !canPtr(x) {
+		v = Preset(v)
+	}
+	//
+	// Assignables
 	switch {
+	//
+	// case canPtr(v) && canPtr(x):
+	//     v.SetPointer(x.Pointer()); return nil
+	case canTime(v) && canTime(x), canDuration(v) && canDuration(x), canError(v) && canError(x):
+		v.Set(x)
+		return nil
 	case canString(v) && canString(x):
 		v.SetString(x.String())
 		return nil
@@ -506,17 +520,174 @@ func (f *StructField) Set(dest interface{}) error {
 	case f.assignableTo(x):
 		v.Set(x)
 		return nil
-	default: // case canPtr(v) && canPtr(x): v.SetPointer(x.Pointer()); return nil
 	}
+	//
+	// Semi-Assignables
+	switch {
+	//
+	// - text     <- bool
+	//   text     <- number
+	//   text     <- []byte
+	//   text     <- date
+	// - bool     <- text
+	// - number   <- bool
+	//   number   <- float (losing decimal point value)
+	// - float    <- number
+	// - []byte   <- text
+	// - date     <- text
+	// - duration <- text
+	//   duration <- number
+	// - error    <- text
+	case canString(v):
+		switch {
+		case canBool(x):
+			v.SetString(fmt.Sprintf("%t", x.Bool()))
+			return nil
+		case canInt(x):
+			v.SetString(fmt.Sprintf("%d", x.Int()))
+			return nil
+		case canUint(x):
+			v.SetString(fmt.Sprintf("%d", x.Uint()))
+			return nil
+		case canFloat(x):
+			v.SetString(fmt.Sprintf("%f", x.Float()))
+			return nil
+		case canBytes(x):
+			v.SetString(string(x.Bytes()))
+			return nil
+		case canTime(x):
+			v.SetString(Time(x).Format(time.RFC3339))
+			return nil
+		}
+	case canBool(v):
+		switch {
+		case canString(x):
+			switch strings.ToLower(x.String()) {
+			case "true", "yes", "y", "ok", "1":
+				v.SetBool(true)
+			default:
+				v.SetBool(false)
+			}
+			return nil
+		}
+	case canInt(v):
+		switch {
+		case canBool(x):
+			b := x.Bool()
+			if b {
+				v.SetInt(1) // var i int64 = 1; v.SetInt(i)
+			} else {
+				v.SetInt(0) // var i int64 = 0; v.SetInt(i)
+			}
+			return nil
+		case canFloat(x):
+			v.SetInt(int64(x.Float()))
+			return nil
+		}
+	case canUint(v):
+		switch {
+		case canBool(x):
+			b := x.Bool()
+			if b {
+				v.SetUint(1) // var i uint64 = 1; v.SetUint(i)
+			} else {
+				v.SetUint(0) // var i uint64 = 0; v.SetUint(i)
+			}
+			return nil
+		case canFloat(x):
+			v.SetUint(uint64(x.Float()))
+			return nil
+		}
+	case canFloat(v):
+		switch {
+		case canInt(x):
+			v.SetFloat(float64(x.Int()))
+		case canUint(x):
+			v.SetFloat(float64(x.Uint()))
+		}
+	case canBytes(v):
+		switch {
+		case canString(x):
+			v.SetBytes([]byte(x.String()))
+			return nil
+		}
+	case canTime(v):
+		switch {
+		case canString(x):
+			txt := x.String()
+			t, found := time.Now(), false
+			layouts := []string{
+				"2006-01-02 15:04:05",    // MySQL DATETIME
+				"2006-01-02",             //       DATE
+				"2006/01/02",             // EXCEL DATE
+				"02-Jan-2006",            //       DATE
+				"01-02-2006 03:04:05 PM", // CSV   DATETIME1
+				"02/01/2006  15:04:05",   //       DATETIME2
+				"02/01/2006 15:04",       //       DATETIME3
+			}
+			var errs error
+			for _, layout := range layouts {
+				date, err := time.Parse(layout, txt)
+				if err != nil {
+					if errs == nil {
+						errs = err
+					} else {
+						errs = errors.Wrap(errs, err.Error())
+					}
+				}
+				t = date
+				found = true
+				break
+			}
+			if found {
+				x := reflect.ValueOf(t)
+				v.Set(x)
+			} else {
+				return errors.Wrapf(errs, "Invalid date value. found: %s; formats expected: %v", txt, layouts)
+			}
+			return nil
+		}
+	case canDuration(v):
+		switch {
+		case canString(x):
+			t := x.String()
+			if !strings.ContainsAny(t, "nsuµmh") {
+				t = t + "ns"
+			}
+			d, err := time.ParseDuration(t)
+			if err != nil {
+				return errors.Wrapf(err, "Invalid duration value. found: %s; want: [1s, 3h, ... ]", t)
+			}
+			v.Set(reflect.ValueOf(d))
+			return nil
+		case canInt(x):
+			v.Set(reflect.ValueOf(time.Duration(x.Int())))
+			return nil
+		case canUint(x):
+			v.Set(reflect.ValueOf(time.Duration(int64(x.Uint()))))
+			return nil
+		case canFloat(x):
+			v.Set(reflect.ValueOf(time.Duration(int64(x.Float()))))
+			return nil
+		}
+	case canError(v):
+		switch {
+		case canString(x):
+			v.Set(reflect.ValueOf(errors.New(x.String())))
+			return nil
+		}
+	}
+	//
+	// Non-Assignables
 	return errors.Errorf("wrong kind of value for field %s. got: '%s' want: '%s'", fieldName, x.Type(), v.Type())
 }
 
 // func (f *StructField) SetElem(i int, dest interface{}) error {
 // 	fieldName := f.Namespace()
 // 	if !f.CanSet() {
-// 		return errors.Wrapf(errNotSettable, "could not set field %s", fieldName)
+// 		return errors.Wrapf(ErrNotSettable, "could not set field %s", fieldName)
 // 	}
-// 	v := f.value()
+// 	v := f.value
 // 	if dest == nil {
 // 		return f.SetNil()
 // 	}
@@ -555,15 +726,15 @@ func (f *StructField) Set(dest interface{}) error {
 
 /*   U n e x p o r t e d   */
 
-// value is the reflection interface to a Go value.
-func (f *StructField) value() reflect.Value {
-	return f.Parent.value.Field(f.index)
-}
+// // value is the reflection interface to a Go value.
+// func (f *StructField) value() reflect.Value {
+// 	return f.Parent.value.Field(f.index)
+// }
 
-// field describes a single field in a struct.
-func (f *StructField) field() reflect.StructField {
-	return f.Parent.value.Type().Field(f.index)
-}
+// // field describes a single field in a struct.
+// func (f *StructField) field() reflect.StructField {
+// 	return f.Parent.value.Type().Field(f.index)
+// }
 
 // equal compares field value with reflect value argument and returns field index
 // if they are equal, else returns OutOfRange, i.e. -1.
@@ -574,7 +745,7 @@ func (f *StructField) equal(x reflect.Value) int {
 	if !f.IsExported() {
 		return OutOfRange
 	}
-	v := f.value()
+	v := f.value
 	// if !v.Type().Comparable() {
 	// 	return OutOfRange
 	// }
@@ -662,7 +833,7 @@ func (f *StructField) equal(x reflect.Value) int {
 
 // assignableTo reports whether a field value is assignable to reflect value x.
 func (f *StructField) assignableTo(x reflect.Value) bool {
-	v := f.value()
+	v := f.value
 	vt := v.Type()
 	xt := x.Type()
 	// fmt.Printf("%s(%s) with dest(%s) == %v\n", f.Namespace(), vt, xt, x.Interface())

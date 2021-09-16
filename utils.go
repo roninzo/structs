@@ -6,6 +6,7 @@ package structs
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -15,34 +16,11 @@ import (
 
 /*   F u n c t i o n s   */
 
-// Elem follows the pointer v and returns the element it points to,
-// for borth reflect value and reflect type, as well as nil error.
-// If v is not a pointer or not a supported pointer, it returns
-// zero-value reflect value and reflect type as well as an error.
-func Elem(v reflect.Value, t reflect.Type) (rv reflect.Value, rt reflect.Type, err error) {
-	switch t.Kind() {
-	case reflect.Ptr:
-		rv, rt = v.Elem(), t.Elem()
-	case reflect.Slice, reflect.Array:
-		rt = t.Elem()
-		if i := 0; i < v.Len() {
-			rv = v.Index(i)
-		} else {
-			rv = reflect.New(rt).Elem()
-		}
-	case reflect.Map, reflect.Chan, reflect.Func:
-		err = errors.Errorf("'%s' is an unsupported pointer to a struct", t.Kind())
-	default:
-		err = errors.Errorf("'%s' is not a pointer", t.Kind())
-	}
-	return rv, rt, err
-}
-
-// Dump returns a MarshalIndent string.
+// Sprint returns a MarshalIndent string.
 //
-// BUG(roninzo): Dump uses json marshaling which  does not support complex
-// types (complex64 and complex128).
-func Dump(dest interface{}) string {
+// BUG(roninzo): Sprint uses json marshaling which does not support complex
+// types (complex64/complex128).
+func Sprint(dest interface{}) string {
 	// s := fmt.Sprintf("%#v", t)
 	// m := make(map[string]interface{}) // convert dest to m first?
 	// http://choly.ca/post/go-json-marshalling/
@@ -50,7 +28,7 @@ func Dump(dest interface{}) string {
 	// https://play.golang.org/p/MuW6gwSAKi
 	// https://attilaolah.eu/2013/11/29/json-decoding-in-go/
 	// https://mariadesouza.com/2017/09/07/custom-unmarshal-json-in-golang/
-	j, err := json.MarshalIndent(dest, " ", "   ")
+	j, err := json.MarshalIndent(dest, " ", "\t")
 	if err != nil {
 		return err.Error()
 	}
@@ -78,11 +56,6 @@ func Duration(v reflect.Value) (d time.Duration) {
 	i := v.Interface()
 	d, _ = i.(time.Duration)
 	return d
-}
-
-// Interface returns interface reflect value, else returns zero value.
-func Interface(v reflect.Value) interface{} {
-	return v.Interface()
 }
 
 // Error returns the error reflect value, else returns nil.
@@ -158,6 +131,90 @@ func PtrDuration(x time.Duration) *time.Duration { return &x }
 func PtrError(x error) *error                    { return &x }
 
 /*   U n e x p o r t e d   */
+
+type unembeddeds struct {
+	Index       int
+	Indexes     []int
+	Name        string
+	Value       reflect.Value
+	StructField reflect.StructField
+	Type        reflect.Type
+}
+
+// explodeEmbedded catalogs all fields info necessary to subsequently create StructField.
+// The catalog will of course contain all fields at the base of the top level struct. However, any encountered
+// anonymous/embedded fields will be recursively scanned to also include their fields too, in the same collection.
+//
+// NOTE(roninzo): explodeEmbedded avoids scanning potential embedded struct from third party types
+// (such as time.Time, reflect.Value, etc.) by only expanding on structs that are declared locally to the current package.
+// Hence, the use of the namespace in the program.
+func explodeEmbedded(v reflect.Value, t reflect.Type, m map[int]unembeddeds, namespace *string, c *int, x []int) {
+	if t.Kind() != reflect.Struct {
+		return
+	}
+	if namespace == nil {
+		namespace = PtrString(nameSpace(t)) // <=> tmp := nameSpace(t); namespace = &tmp
+	}
+	if c == nil {
+		c = PtrInt(0) // <=> tmp := 0; c = &tmp
+	}
+	if x == nil {
+		x = make([]int, 0)
+	}
+	x = append(x, 0)
+	n := len(x)
+	for i := 0; i < t.NumField(); i++ {
+		x[n-1] = i
+		sv := v.Field(i)
+		sf := t.Field(i)
+		if sf.Anonymous && nameSpace(sf.Type) == *namespace {
+			explodeEmbedded(sv, sf.Type, m, namespace, c, x)
+		} else {
+			tmp := make([]int, n)
+			copy(tmp, x)
+			unembedded := unembeddeds{
+				Index:       *c,
+				Indexes:     tmp,
+				Name:        sf.Name,
+				Value:       sv,
+				StructField: sf,
+				Type:        sf.Type,
+			}
+			m[*c] = unembedded
+			*c++
+		}
+	}
+	x = x[:n-1]
+}
+
+// structValueElem follows the pointer v and returns the element it points to,
+// for borth reflect value and reflect type, as well as nil error.
+// If v is not a pointer or not a supported pointer, it returns
+// zero-value reflect value and reflect type as well as an error.
+func structValueElem(v reflect.Value, t reflect.Type) (rv reflect.Value, rt reflect.Type, err error) {
+	switch t.Kind() {
+	case reflect.Ptr:
+		rv, rt = v.Elem(), t.Elem()
+	case reflect.Slice, reflect.Array:
+		rt = t.Elem()
+		if i := 0; i < v.Len() {
+			rv = v.Index(i)
+		} else {
+			rv = reflect.New(rt).Elem()
+		}
+	case reflect.Map, reflect.Chan, reflect.Func:
+		err = errors.Errorf("'%s' is an unsupported pointer to a struct", t.Kind())
+	default:
+		err = errors.Errorf("'%s' is not a pointer", t.Kind())
+	}
+	return rv, rt, err
+}
+
+// nameSpace returns the name space string part of reflect type.
+func nameSpace(t reflect.Type) string {
+	s := fmt.Sprintf("%v", t)
+	return strings.Split(s, ".")[0]
+}
 
 // canString returns true if reflect value is of type string.
 func canString(v reflect.Value) bool {
@@ -294,7 +351,7 @@ func canStruct(v reflect.Value) bool {
 			return true
 		}
 	case reflect.Ptr:
-		v, _, err := Elem(v, v.Type())
+		v, _, err := structValueElem(v, v.Type())
 		if err != nil {
 			return false
 		}
@@ -321,7 +378,7 @@ func canNil(v reflect.Value) bool {
 // else returns false.
 func canPtr(v reflect.Value) bool {
 	switch v.Kind() {
-	case reflect.Ptr, reflect.UnsafePointer:
+	case reflect.Ptr: // , reflect.UnsafePointer:
 		return true
 	}
 	return false
