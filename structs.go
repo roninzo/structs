@@ -424,24 +424,24 @@ func (s *StructValue) Debug() string {
 		p = s.Parent.Debug()
 	}
 	fields := make(map[int]string)
-	for i, f := range s.fieldsByIndex {
+	for i, f := range s.Fields() {
 		fields[i] = f.Name()
 	}
 	d := struct {
-		// Value interface{} `json:"value"`
-		// Rows   interface{}    `json:"rows"`
-		// MaxRow int            `json:"max_row"`
+		Value  interface{}    `json:"value"`
+		Rows   interface{}    `json:"rows"`
+		MaxRow int            `json:"max_row"`
 		Kinds  string         `json:"kinds"`
-		Parent string         `json:"parent"`
 		Fields map[int]string `json:"fields"`
+		Parent string         `json:"parent"`
 		Error  error          `json:"error"`
 	}{
-		// Value: s.value.Interface(),
-		// Rows:   s.rows.Interface(),
-		// MaxRow: s.rows.Len(),
+		Value:  s.value.Interface(),
+		Rows:   s.rows.Interface(),
+		MaxRow: s.rows.Len(),
 		Kinds:  Kinds(s.kinds...),
-		Parent: p,
 		Fields: fields,
+		Parent: p,
 		Error:  s.Error,
 	}
 	return Sprint(d)

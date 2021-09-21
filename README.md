@@ -2,7 +2,7 @@ Golang structs
 [![license](https://img.shields.io/badge/license-MIT-green "The MIT License (MIT)")](LICENSE)
 [![Go Reference](https://pkg.go.dev/badge/github.com/roninzo/structs.svg)](https://pkg.go.dev/github.com/roninzo/structs)
 [![build](https://img.shields.io/badge/build-passing-green "Go build status")](structs.go)
-[![coverage](https://img.shields.io/badge/coverage-78%25-yellowgreen?logo=codecov "Unit tests coverage")](structs_test.go) 
+[![coverage](https://img.shields.io/badge/coverage-73%25-yellowgreen?logo=codecov "Unit tests coverage")](structs_test.go) 
 =======
 
 Package structs implements a generic interface for manipulating Go structs.

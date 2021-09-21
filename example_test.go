@@ -983,6 +983,9 @@ func ExampleStructValue_Rows() {
 	//  	],
 	//  	"max_row": 2,
 	//  	"kinds": "ptr,slice,struct",
+	//  	"fields": {
+	//  		"0": "Count"
+	//  	},
 	//  	"parent": "",
 	//  	"error": null
 	//  }.
@@ -1348,33 +1351,44 @@ func ExampleStructField_CanSet() {
 	// CanSet: false
 }
 
+// TODO: No example of Anonymous fields?
+
 func ExampleStructField_IsAnonymous() {
-	type Server struct {
+	type T3 struct {
+		Config string `json:"config,omitempty"`
+	}
+
+	type T2 struct {
+		Options string `json:"options,omitempty"`
+		T3
+	}
+
+	type T1 struct {
 		Name     string `json:"name,omitempty"`
 		ID       uint   `json:"id,omitempty"`
 		Enabled  bool   `json:"enabled,omitempty"`
 		Count    int32  `json:"count,omitempty"`
 		Password string `json:"-"`
-		error    `json:"program,omitempty"`
+		Nested   T2     `json:"t2,omitempty"`
 	}
 
-	server := Server{
+	t := T1{
 		"Roninzo",
 		123456,
 		true,
 		0,
 		"abcdefg",
-		errors.New("does not work"),
+		T2{"654321", T3{"cfg"}},
 	}
 
-	s, err := structs.New(&server)
+	s, err := structs.New(&t)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
 
 	f1 := s.Field(0)
 	f2 := s.Field("Password")
-	f3 := s.Field(5)
+	f3 := s.Field("Nested").Struct().Field(0)
 
 	fmt.Printf("IsAnonymous: %v\n", f1.IsAnonymous())
 	fmt.Printf("IsAnonymous: %v\n", f2.IsAnonymous())
@@ -1383,36 +1397,47 @@ func ExampleStructField_IsAnonymous() {
 	// Output:
 	// IsAnonymous: false
 	// IsAnonymous: false
-	// IsAnonymous: true
+	// IsAnonymous: false
 }
 
+// TODO: No example of Embedded fields?
+
 func ExampleStructField_IsEmbedded() {
-	type Server struct {
+	type T3 struct {
+		Config string `json:"config,omitempty"`
+	}
+
+	type T2 struct {
+		Options string `json:"options,omitempty"`
+		T3
+	}
+
+	type T1 struct {
 		Name     string `json:"name,omitempty"`
 		ID       uint   `json:"id,omitempty"`
 		Enabled  bool   `json:"enabled,omitempty"`
 		Count    int32  `json:"count,omitempty"`
 		Password string `json:"-"`
-		error    `json:"program,omitempty"`
+		Nested   T2     `json:"t2,omitempty"`
 	}
 
-	server := Server{
+	t := T1{
 		"Roninzo",
 		123456,
 		true,
 		0,
 		"abcdefg",
-		errors.New("does not work"),
+		T2{"654321", T3{"cfg"}},
 	}
 
-	s, err := structs.New(&server)
+	s, err := structs.New(&t)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
 
 	f1 := s.Field(0)
 	f2 := s.Field("Password")
-	f3 := s.Field(5)
+	f3 := s.Field("Nested").Struct().Field(0)
 
 	fmt.Printf("IsEmbedded: %v\n", f1.IsEmbedded())
 	fmt.Printf("IsEmbedded: %v\n", f2.IsEmbedded())
@@ -1421,7 +1446,7 @@ func ExampleStructField_IsEmbedded() {
 	// Output:
 	// IsEmbedded: false
 	// IsEmbedded: false
-	// IsEmbedded: true
+	// IsEmbedded: false
 }
 
 func ExampleStructField_IsExported() {

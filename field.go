@@ -1065,15 +1065,18 @@ func (f *StructField) assignableTo(x reflect.Value) bool {
 	case vt.AssignableTo(xt):
 		// fmt.Println("vt.AssignableTo(xt)")
 		return true
-	case vt.ConvertibleTo(xt): // Not Used?
-		// fmt.Println("vt.ConvertibleTo(xt)")
-		return true
+
 	case vt.String() == xt.String():
 		// fmt.Println("vt.String() == xt.String()")
 		return true
+
 	case canInterface(v): // canInterface(x): no need; x came from interface{} dest
 		// fmt.Println("canInterface(v)")
 		return true
+
+		// case vt.ConvertibleTo(xt): // Not Used?
+		// 	// fmt.Println("vt.ConvertibleTo(xt)")
+		// 	return true
 		// case canError(v) && canError(x):
 		// 	// fmt.Println("canError(v) && canError(x)")
 		// 	return true

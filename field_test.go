@@ -107,7 +107,7 @@ func TestFieldInvalidArg(t *testing.T) {
 		D time.Duration
 		E error
 		T time.Time
-		reflect.Value
+		V reflect.Value
 		T2
 	}
 
@@ -150,9 +150,9 @@ func TestFieldInvalidArg(t *testing.T) {
 	assert.Equal(t, true, f.CanTime())
 	assert.Equal(t, "2021-08-03 13:59:35", f.Time().Format(mysqlFormat))
 
-	f = s.Field(6) // Value (reflect.Value)
+	f = s.Field("V")
 	assert.Equal(t, true, f.IsValid())
-	assert.Equal(t, true, f.IsEmbedded())
+	assert.Equal(t, false, f.IsEmbedded())
 	assert.Equal(t, reflect.Struct, f.Kind())
 
 	f = s.Field(7) // T2.String
