@@ -145,9 +145,9 @@ type unembeddeds struct {
 // The catalog will of course contain all fields at the base of the top level struct. However, any encountered
 // anonymous/embedded fields will be recursively scanned to also include their fields too, in the same collection.
 //
-// NOTE(roninzo): explodeEmbedded avoids scanning potential embedded struct from third party types
-// (such as time.Time, reflect.Value, etc.) by only expanding on structs that are declared locally to the current package.
-// Hence, the use of the namespace in the program.
+// // NOTE(roninzo): explodeEmbedded avoids scanning potential embedded struct from third party types
+// // (such as time.Time, reflect.Value, etc.) by only expanding on structs that are declared locally to the current package.
+// // Hence, the use of the namespace in the program.
 func explodeEmbedded(v reflect.Value, t reflect.Type, m map[int]unembeddeds, namespace *string, c *int, x []int) {
 	if t.Kind() != reflect.Struct {
 		return
@@ -167,7 +167,7 @@ func explodeEmbedded(v reflect.Value, t reflect.Type, m map[int]unembeddeds, nam
 		x[n-1] = i
 		sv := v.Field(i)
 		sf := t.Field(i)
-		if sf.Anonymous && nameSpace(sf.Type) == *namespace {
+		if sf.Anonymous { // && nameSpace(sf.Type) == *namespace {
 			explodeEmbedded(sv, sf.Type, m, namespace, c, x)
 		} else {
 			tmp := make([]int, n)

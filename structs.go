@@ -78,21 +78,21 @@
 // All objects in this package are linked to the main StructValue object.
 // The relationships between each one of them are as follow:
 //
-//   +--------------+
-//   | *StructValue |<------------------------------------------+
-//   +----+---------+                                           |
-//        |                                                     |
-//        |                  +---------------+                  |
-//        +---> Field(x) --->| *StructField  |---> Parent ----->+
-//        |                  +---------------+                  |
-//        |                                                     |
-//        |                  +---------------+                  |
-//        +---> Fields() --->| *StructFields |---> Parent() --->+
-//        |                  +---------------+                  |
-//        |                                                     |
-//        |                  +---------------+                  |
-//        +---> Rows() ----->| *StructRows   |---> Parent ----->+
-//                           +---------------+
+//    --------------
+//   | *StructValue |<----------------------------------------+
+//    --+-----------                                          |
+//      |                                                     |
+//      |                   ---------------                   |
+//      +---> Field(x) --->| *StructField  |---> Parent ----->+
+//      |                   ---------------                   |
+//      |                                                     |
+//      |                   ---------------                   |
+//      +---> Fields() --->| *StructFields |---> Parent() --->+
+//      |                   ---------------                   |
+//      |                                                     |
+//      |                   ---------------                   |
+//      +---> Rows() ----->| *StructRows   |---> Parent ----->+
+//                          ---------------
 //
 // NOTE: For an exhaustive illustration of package capabilities, please refer
 // to the following file: https://github.com/roninzo/structs/example_test.go.
@@ -174,13 +174,13 @@
 //   if f.CanStruct() {
 //      f = f.Struct().Field("Number")
 //      if f.CanInt() {
-//         fmt.Printf("Number was equal to %d\n", s.Int())
+//         fmt.Printf("Number was equal to %d\n", f.Int())
 //         if f.CanSet() {
 //            err := f.SetInt(654321)
 //            if err != nil {
 //               return err
 //            }
-//            fmt.Printf("Number is now equal to %d\n", s.Int())
+//            fmt.Printf("Number is now equal to %d\n", f.Int())
 //         }
 //      }
 //   }
@@ -423,19 +423,25 @@ func (s *StructValue) Debug() string {
 	if s.Parent != nil {
 		p = s.Parent.Debug()
 	}
+	fields := make(map[int]string)
+	for i, f := range s.fieldsByIndex {
+		fields[i] = f.Name()
+	}
 	d := struct {
-		Value  interface{} `json:"value"`
-		Rows   interface{} `json:"rows"`
-		MaxRow int         `json:"max_row"`
-		Kinds  string      `json:"kinds"`
-		Parent string      `json:"parent"`
-		Error  error       `json:"error"`
+		// Value interface{} `json:"value"`
+		// Rows   interface{}    `json:"rows"`
+		// MaxRow int            `json:"max_row"`
+		Kinds  string         `json:"kinds"`
+		Parent string         `json:"parent"`
+		Fields map[int]string `json:"fields"`
+		Error  error          `json:"error"`
 	}{
-		Value:  s.value.Interface(),
-		Rows:   s.rows.Interface(),
-		MaxRow: s.rows.Len(),
+		// Value: s.value.Interface(),
+		// Rows:   s.rows.Interface(),
+		// MaxRow: s.rows.Len(),
 		Kinds:  Kinds(s.kinds...),
 		Parent: p,
+		Fields: fields,
 		Error:  s.Error,
 	}
 	return Sprint(d)

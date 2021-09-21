@@ -274,3 +274,43 @@ func MapFunc(dest interface{}, handler func(reflect.Value) error) (interface{}, 
 	}
 	return clone, nil
 }
+
+// ScanFromMap trusted source maps of string to interface{} row into Go struct dest.
+//
+// Optionally, a mapping argument can be provided if the column names are different between
+// dest and row. That argument is a key-value pair of strings where key is the column name
+// in dest and value the column name in row.
+func ScanFromMap(dest interface{}, row map[string]interface{}, mapping map[string]string) error {
+	s, err := New(dest)
+	if err != nil {
+		return err
+	}
+	if mapping != nil {
+		for destCol, srcCol := range mapping {
+			srcValue, ok := row[srcCol]
+			if !ok {
+				return errors.Errorf("could not find column '%s' in trusted source instance", srcCol)
+			}
+			f := s.Field(destCol)
+			if err = s.Err(); err != nil {
+				return errors.Wrapf(err, "could not find column '%s' in %s", destCol, s.Name())
+			}
+			err = f.Set(srcValue)
+			if err != nil {
+				return errors.Wrapf(err, "could not set column '%s' in %s", destCol, s.Name())
+			}
+		}
+	} else {
+		for srcCol, srcValue := range row {
+			f := s.Field(srcCol)
+			if err = s.Err(); err != nil {
+				return errors.Wrapf(err, "could not find column '%s' in %s", srcCol, s.Name())
+			}
+			err = f.Set(srcValue)
+			if err != nil {
+				return errors.Wrapf(err, "could not set column '%s' in %s to %v", srcCol, s.Name(), srcValue)
+			}
+		}
+	}
+	return nil
+}
