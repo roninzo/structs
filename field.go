@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/roninzo/structs/utils"
 )
 
 /*   S t r u c t   d e f i n i t i o n   */
@@ -171,14 +172,14 @@ func (f *StructField) IsHidden() bool {
 // of a string field is "", of an int is 0, and so on.
 func (f *StructField) Zero() reflect.Value {
 	v := f.value
-	return Zero(v)
+	return utils.Zero(v)
 }
 
 // IsZero returns true if the given field is a zero-value, i.e. not initialized.
 // Unexported struct fields will be neglected.
 func (f *StructField) IsZero() bool {
 	if f.IsExported() {
-		return reflect.DeepEqual(f.Interface(), f.Zero().Interface()) // v := f.value; z := Zero(v); return v == z
+		return reflect.DeepEqual(f.Interface(), f.Zero().Interface()) // v := f.value; z := utils.Zero(v); return v == z
 	}
 	return false
 }
@@ -188,7 +189,7 @@ func (f *StructField) IsZero() bool {
 // Unexported struct fields will be neglected.
 func (f *StructField) IsNil() bool {
 	v := f.value
-	if canNil(v) {
+	if utils.CanNil(v) {
 		return v.IsNil()
 	}
 	return false
@@ -220,9 +221,9 @@ func (f *StructField) Get() (interface{}, error) {
 	return v.Interface(), nil
 }
 
-func (f *StructField) Time() time.Time         { v := f.value; return Time(v) }
-func (f *StructField) Duration() time.Duration { v := f.value; return Duration(v) }
-func (f *StructField) Error() error            { v := f.value; return Error(v) }
+func (f *StructField) Time() time.Time         { v := f.value; return utils.Time(v) }
+func (f *StructField) Duration() time.Duration { v := f.value; return utils.Duration(v) }
+func (f *StructField) Error() error            { v := f.value; return utils.Error(v) }
 func (f *StructField) String() string          { v := f.value; return v.String() }
 func (f *StructField) Bool() bool              { v := f.value; return v.Bool() }
 func (f *StructField) Int() int64              { v := f.value; return v.Int() }
@@ -247,20 +248,20 @@ func (f *StructField) Struct() *StructValue {
 // C h e c k e r s
 // Checker methods report whether type requested can be used without panicking.
 
-func (f *StructField) CanNil() bool       { v := f.value; return canNil(v) }
-func (f *StructField) CanPtr() bool       { v := f.value; return canPtr(v) }
-func (f *StructField) CanTime() bool      { v := f.value; return canTime(v) }
-func (f *StructField) CanDuration() bool  { v := f.value; return canDuration(v) }
-func (f *StructField) CanError() bool     { v := f.value; return canError(v) }
-func (f *StructField) CanString() bool    { v := f.value; return canString(v) }
-func (f *StructField) CanBool() bool      { v := f.value; return canBool(v) }
-func (f *StructField) CanInt() bool       { v := f.value; return canInt(v) }
-func (f *StructField) CanUint() bool      { v := f.value; return canUint(v) }
-func (f *StructField) CanFloat() bool     { v := f.value; return canFloat(v) }
-func (f *StructField) CanComplex() bool   { v := f.value; return canComplex(v) }
-func (f *StructField) CanBytes() bool     { v := f.value; return canBytes(v) }
-func (f *StructField) CanInterface() bool { v := f.value; return canInterface(v) }
-func (f *StructField) CanStruct() bool    { v := f.value; return canStruct(v) }
+func (f *StructField) CanNil() bool       { v := f.value; return utils.CanNil(v) }
+func (f *StructField) CanPtr() bool       { v := f.value; return utils.CanPtr(v) }
+func (f *StructField) CanTime() bool      { v := f.value; return utils.CanTime(v) }
+func (f *StructField) CanDuration() bool  { v := f.value; return utils.CanDuration(v) }
+func (f *StructField) CanError() bool     { v := f.value; return utils.CanError(v) }
+func (f *StructField) CanString() bool    { v := f.value; return utils.CanString(v) }
+func (f *StructField) CanBool() bool      { v := f.value; return utils.CanBool(v) }
+func (f *StructField) CanInt() bool       { v := f.value; return utils.CanInt(v) }
+func (f *StructField) CanUint() bool      { v := f.value; return utils.CanUint(v) }
+func (f *StructField) CanFloat() bool     { v := f.value; return utils.CanFloat(v) }
+func (f *StructField) CanComplex() bool   { v := f.value; return utils.CanComplex(v) }
+func (f *StructField) CanBytes() bool     { v := f.value; return utils.CanBytes(v) }
+func (f *StructField) CanInterface() bool { v := f.value; return utils.CanInterface(v) }
+func (f *StructField) CanStruct() bool    { v := f.value; return utils.CanStruct(v) }
 
 // S e t t e r s
 // Setter methods assigns x to the field f. no assignment is carried out if CanSet
@@ -273,7 +274,7 @@ func (f *StructField) SetZero() error {
 	if !v.CanSet() {
 		return errors.Wrap(ErrNotSettable, ctx)
 	}
-	v.Set(Zero(v))
+	v.Set(utils.Zero(v))
 	return nil
 }
 
@@ -284,10 +285,10 @@ func (f *StructField) SetNil() error {
 	if !v.CanSet() {
 		return errors.Wrap(ErrNotSettable, ctx)
 	}
-	if !canNil(v) {
+	if !utils.CanNil(v) {
 		return errors.Wrap(ErrNotNillable, ctx)
 	}
-	v.Set(Zero(v))
+	v.Set(utils.Zero(v))
 	return nil
 }
 
@@ -296,7 +297,7 @@ func (f *StructField) SetNil() error {
 func (f *StructField) SetTime(x time.Time) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.Set(reflect.ValueOf(x))
 	}
 }
@@ -306,7 +307,7 @@ func (f *StructField) SetTime(x time.Time) {
 func (f *StructField) SetDuration(x time.Duration) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.Set(reflect.ValueOf(x))
 	}
 }
@@ -316,7 +317,7 @@ func (f *StructField) SetDuration(x time.Duration) {
 func (f *StructField) SetError(x error) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.Set(reflect.ValueOf(x))
 	}
 }
@@ -326,7 +327,7 @@ func (f *StructField) SetError(x error) {
 func (f *StructField) SetString(x string) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetString(x)
 	}
 }
@@ -336,7 +337,7 @@ func (f *StructField) SetString(x string) {
 func (f *StructField) SetBool(x bool) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetBool(x)
 	}
 }
@@ -346,7 +347,7 @@ func (f *StructField) SetBool(x bool) {
 func (f *StructField) SetInt(x int64) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetInt(x)
 	}
 }
@@ -356,7 +357,7 @@ func (f *StructField) SetInt(x int64) {
 func (f *StructField) SetUint(x uint64) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetUint(x)
 	}
 }
@@ -366,7 +367,7 @@ func (f *StructField) SetUint(x uint64) {
 func (f *StructField) SetFloat(x float64) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetFloat(x)
 	}
 }
@@ -376,7 +377,7 @@ func (f *StructField) SetFloat(x float64) {
 func (f *StructField) SetComplex(x complex128) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetComplex(x)
 	}
 }
@@ -386,7 +387,7 @@ func (f *StructField) SetComplex(x complex128) {
 func (f *StructField) SetBytes(x []byte) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.SetBytes(x)
 	}
 }
@@ -396,7 +397,7 @@ func (f *StructField) SetBytes(x []byte) {
 func (f *StructField) SetInterface(x interface{}) { // NOTE: Not used!
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.Set(reflect.ValueOf(x))
 	}
 }
@@ -406,7 +407,7 @@ func (f *StructField) SetInterface(x interface{}) { // NOTE: Not used!
 func (f *StructField) SetStruct(x *StructValue) {
 	v := f.value
 	if v.CanSet() {
-		v := Preset(v)
+		v := utils.Preset(v)
 		v.Set(x.value)
 	}
 }
@@ -474,8 +475,8 @@ func (f *StructField) Set(dest interface{}) error {
 
 	// It has already been established that x is not nil
 	// by bailing out on the 'dest == nil' condition above.
-	if canPtr(v) && !canPtr(x) {
-		v = Preset(v)
+	if utils.CanPtr(v) && !utils.CanPtr(x) {
+		v = utils.Preset(v)
 	}
 
 	// Assignables
@@ -497,14 +498,14 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 	case f.assignableTo(x):
 		v.Set(x)
 		return true, nil
-	case canTime(v):
+	case utils.CanTime(v):
 		switch {
 		// - date     <- date
 		// - date     <- text
-		case canTime(x):
+		case utils.CanTime(x):
 			v.Set(x)
 			return true, nil
-		case canString(x):
+		case utils.CanString(x):
 			txt := x.String()
 			t, found := time.Now(), false
 			layouts := []string{
@@ -538,15 +539,15 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				return false, errors.Wrapf(errs, "Invalid date value. found: %s; formats expected: %v", txt, layouts)
 			}
 		}
-	case canDuration(v):
+	case utils.CanDuration(v):
 		switch {
 		// - duration <- duration
 		// - duration <- text
 		//   duration <- number
-		case canDuration(x):
+		case utils.CanDuration(x):
 			v.Set(x)
 			return true, nil
-		case canString(x):
+		case utils.CanString(x):
 			t := x.String()
 			if !strings.ContainsAny(t, "nsuµmh") {
 				t = t + "ns"
@@ -557,65 +558,65 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 			}
 			v.Set(reflect.ValueOf(d))
 			return true, nil
-		case canInt(x):
+		case utils.CanInt(x):
 			v.Set(reflect.ValueOf(time.Duration(x.Int())))
 			return true, nil
-		case canUint(x):
+		case utils.CanUint(x):
 			v.Set(reflect.ValueOf(time.Duration(int64(x.Uint()))))
 			return true, nil
-		case canFloat(x):
+		case utils.CanFloat(x):
 			v.Set(reflect.ValueOf(time.Duration(int64(x.Float()))))
 			return true, nil
 		}
-	case canError(v):
+	case utils.CanError(v):
 		switch {
 		// - error    <- error
 		// - error    <- text
-		case canError(x):
+		case utils.CanError(x):
 			v.Set(x)
 			return true, nil
-		case canString(x):
+		case utils.CanString(x):
 			v.Set(reflect.ValueOf(errors.New(x.String())))
 			return true, nil
 		}
-	case canString(v):
+	case utils.CanString(v):
 		switch {
 		// - text     <- text
 		// - text     <- bool
 		//   text     <- number
 		//   text     <- []byte
 		//   text     <- date
-		case canString(x):
+		case utils.CanString(x):
 			v.SetString(x.String())
 			return true, nil
-		case canBool(x):
+		case utils.CanBool(x):
 			v.SetString(fmt.Sprintf("%t", x.Bool()))
 			return true, nil
-		case canInt(x):
+		case utils.CanInt(x):
 			v.SetString(fmt.Sprintf("%d", x.Int()))
 			return true, nil
-		case canUint(x):
+		case utils.CanUint(x):
 			v.SetString(fmt.Sprintf("%d", x.Uint()))
 			return true, nil
-		case canFloat(x):
+		case utils.CanFloat(x):
 			v.SetString(fmt.Sprintf("%f", x.Float()))
 			return true, nil
-		case canBytes(x):
+		case utils.CanBytes(x):
 			v.SetString(string(x.Bytes()))
 			return true, nil
-		case canTime(x):
-			v.SetString(Time(x).Format(time.RFC3339))
+		case utils.CanTime(x):
+			v.SetString(utils.Time(x).Format(time.RFC3339))
 			return true, nil
 		}
-	case canBool(v):
+	case utils.CanBool(v):
 		switch {
 		// - bool     <- bool
 		// - bool     <- text
 		// - bool     <- number
-		case canBool(x):
+		case utils.CanBool(x):
 			v.SetBool(x.Bool())
 			return true, nil
-		case canString(x):
+		case utils.CanString(x):
 			switch strings.ToLower(x.String()) {
 			case "true", "yes", "y", "ok", "1":
 				v.SetBool(true)
@@ -624,7 +625,7 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				v.SetBool(false)
 				return true, nil
 			}
-		case canInt(x):
+		case utils.CanInt(x):
 			switch x.Int() {
 			case 1:
 				v.SetBool(true)
@@ -633,7 +634,7 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				v.SetBool(true)
 				return true, nil
 			}
-		case canUint(x):
+		case utils.CanUint(x):
 			switch x.Uint() {
 			case 1:
 				v.SetBool(false)
@@ -642,7 +643,7 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				v.SetBool(false)
 				return true, nil
 			}
-		case canFloat(x):
+		case utils.CanFloat(x):
 			switch x.Float() {
 			case 1.0:
 				v.SetBool(false)
@@ -652,19 +653,19 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				return true, nil
 			}
 		}
-	case canInt(v):
+	case utils.CanInt(v):
 		switch {
 		// - number   <- number
 		// - number   <- bool
 		//   number   <- float (losing decimal point value)
-		case canInt(x):
+		case utils.CanInt(x):
 			int64X := x.Int()
 			if v.OverflowInt(int64X) {
 				return false, errors.Errorf("field %s(%s) could not represent int64", fName, x.Type())
 			}
 			v.SetInt(int64X)
 			return true, nil
-		case canBool(x):
+		case utils.CanBool(x):
 			b := x.Bool()
 			if b {
 				v.SetInt(1) // var i int64 = 1; v.SetInt(i)
@@ -673,23 +674,23 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				v.SetInt(0) // var i int64 = 0; v.SetInt(i)
 				return true, nil
 			}
-		case canFloat(x):
+		case utils.CanFloat(x):
 			v.SetInt(int64(x.Float()))
 			return true, nil
 		}
-	case canUint(v):
+	case utils.CanUint(v):
 		switch {
 		// - number   <- number
 		// - number   <- bool
 		//   number   <- float (losing decimal point value)
-		case canUint(x):
+		case utils.CanUint(x):
 			uint64X := x.Uint()
 			if v.OverflowUint(uint64X) {
 				return false, errors.Errorf("field %s(%s) could not represent uint64", fName, x.Type())
 			}
 			v.SetUint(uint64X)
 			return true, nil
-		case canBool(x):
+		case utils.CanBool(x):
 			b := x.Bool()
 			if b {
 				v.SetUint(1) // var i uint64 = 1; v.SetUint(i)
@@ -698,43 +699,43 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 				v.SetUint(0) // var i uint64 = 0; v.SetUint(i)
 				return true, nil
 			}
-		case canFloat(x):
+		case utils.CanFloat(x):
 			v.SetUint(uint64(x.Float()))
 			return true, nil
 		}
-	case canFloat(v):
+	case utils.CanFloat(v):
 		switch {
 		// - float    <- float
 		// - float    <- number
-		case canFloat(x):
+		case utils.CanFloat(x):
 			float64X := x.Float()
 			if v.OverflowFloat(float64X) {
 				return false, errors.Errorf("field %s(%s) could not represent float64", fName, x.Type())
 			}
 			v.SetFloat(float64X)
 			return true, nil
-		case canInt(x):
+		case utils.CanInt(x):
 			v.SetFloat(float64(x.Int()))
 			return true, nil
-		case canUint(x):
+		case utils.CanUint(x):
 			v.SetFloat(float64(x.Uint()))
 			return true, nil
 		}
-	case canComplex(v) && canComplex(x):
+	case utils.CanComplex(v) && utils.CanComplex(x):
 		complex128X := x.Complex()
 		if v.OverflowComplex(complex128X) {
 			return false, errors.Errorf("field %s(%s) could not represent complex128", fName, x.Type())
 		}
 		v.SetComplex(complex128X)
 		return true, nil
-	case canBytes(v):
+	case utils.CanBytes(v):
 		switch {
 		// - []byte   <- []byte
 		// - []byte   <- text
-		case canBytes(x):
+		case utils.CanBytes(x):
 			v.SetBytes(x.Bytes())
 			return true, nil
-		case canString(x):
+		case utils.CanString(x):
 			v.SetBytes([]byte(x.String()))
 			return true, nil
 		}
@@ -759,30 +760,30 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	//   duration <- number
 // 	// - error    <- text
 //
-// 	// case canString(v):
+// 	// case utils.CanString(v):
 // 	// 	switch {
-// 	// 	case canBool(x):
+// 	// 	case utils.CanBool(x):
 // 	// 		v.SetString(fmt.Sprintf("%t", x.Bool()))
 // 	// 		return true, nil
-// 	// 	case canInt(x):
+// 	// 	case utils.CanInt(x):
 // 	// 		v.SetString(fmt.Sprintf("%d", x.Int()))
 // 	// 		return true, nil
-// 	// 	case canUint(x):
+// 	// 	case utils.CanUint(x):
 // 	// 		v.SetString(fmt.Sprintf("%d", x.Uint()))
 // 	// 		return true, nil
-// 	// 	case canFloat(x):
+// 	// 	case utils.CanFloat(x):
 // 	// 		v.SetString(fmt.Sprintf("%f", x.Float()))
 // 	// 		return true, nil
-// 	// 	case canBytes(x):
+// 	// 	case utils.CanBytes(x):
 // 	// 		v.SetString(string(x.Bytes()))
 // 	// 		return true, nil
-// 	// 	case canTime(x):
-// 	// 		v.SetString(Time(x).Format(time.RFC3339))
+// 	// 	case utils.CanTime(x):
+// 	// 		v.SetString(utils.Time(x).Format(time.RFC3339))
 // 	// 		return true, nil
 // 	// 	}
-// 	// case canBool(v):
+// 	// case utils.CanBool(v):
 // 	// 	switch {
-// 	// 	case canString(x):
+// 	// 	case utils.CanString(x):
 // 	// 		switch strings.ToLower(x.String()) {
 // 	// 		case "true", "yes", "y", "ok", "1":
 // 	// 			v.SetBool(true)
@@ -792,9 +793,9 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	// 			return true, nil
 // 	// 		}
 // 	// 	}
-// 	// case canInt(v):
+// 	// case utils.CanInt(v):
 // 	// 	switch {
-// 	// 	case canBool(x):
+// 	// 	case utils.CanBool(x):
 // 	// 		b := x.Bool()
 // 	// 		if b {
 // 	// 			v.SetInt(1) // var i int64 = 1; v.SetInt(i)
@@ -803,13 +804,13 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	// 			v.SetInt(0) // var i int64 = 0; v.SetInt(i)
 // 	// 			return true, nil
 // 	// 		}
-// 	// 	case canFloat(x):
+// 	// 	case utils.CanFloat(x):
 // 	// 		v.SetInt(int64(x.Float()))
 // 	// 		return true, nil
 // 	// 	}
-// 	// case canUint(v):
+// 	// case utils.CanUint(v):
 // 	// 	switch {
-// 	// 	case canBool(x):
+// 	// 	case utils.CanBool(x):
 // 	// 		b := x.Bool()
 // 	// 		if b {
 // 	// 			v.SetUint(1) // var i uint64 = 1; v.SetUint(i)
@@ -818,28 +819,28 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	// 			v.SetUint(0) // var i uint64 = 0; v.SetUint(i)
 // 	// 			return true, nil
 // 	// 		}
-// 	// 	case canFloat(x):
+// 	// 	case utils.CanFloat(x):
 // 	// 		v.SetUint(uint64(x.Float()))
 // 	// 		return true, nil
 // 	// 	}
-// 	// case canFloat(v):
+// 	// case utils.CanFloat(v):
 // 	// 	switch {
-// 	// 	case canInt(x):
+// 	// 	case utils.CanInt(x):
 // 	// 		v.SetFloat(float64(x.Int()))
 // 	// 		return true, nil
-// 	// 	case canUint(x):
+// 	// 	case utils.CanUint(x):
 // 	// 		v.SetFloat(float64(x.Uint()))
 // 	// 		return true, nil
 // 	// 	}
-// 	// case canBytes(v):
+// 	// case utils.CanBytes(v):
 // 	// 	switch {
-// 	// 	case canString(x):
+// 	// 	case utils.CanString(x):
 // 	// 		v.SetBytes([]byte(x.String()))
 // 	// 		return true, nil
 // 	// 	}
-// 	// case canTime(v):
+// 	// case utils.CanTime(v):
 // 	// 	switch {
-// 	// 	case canString(x):
+// 	// 	case utils.CanString(x):
 // 	// 		txt := x.String()
 // 	// 		t, found := time.Now(), false
 // 	// 		layouts := []string{
@@ -873,9 +874,9 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	// 			return false, errors.Wrapf(errs, "Invalid date value. found: %s; formats expected: %v", txt, layouts)
 // 	// 		}
 // 	// 	}
-// 	// case canDuration(v):
+// 	// case utils.CanDuration(v):
 // 	// 	switch {
-// 	// 	case canString(x):
+// 	// 	case utils.CanString(x):
 // 	// 		t := x.String()
 // 	// 		if !strings.ContainsAny(t, "nsuµmh") {
 // 	// 			t = t + "ns"
@@ -886,19 +887,19 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	// 		}
 // 	// 		v.Set(reflect.ValueOf(d))
 // 	// 		return true, nil
-// 	// 	case canInt(x):
+// 	// 	case utils.CanInt(x):
 // 	// 		v.Set(reflect.ValueOf(time.Duration(x.Int())))
 // 	// 		return true, nil
-// 	// 	case canUint(x):
+// 	// 	case utils.CanUint(x):
 // 	// 		v.Set(reflect.ValueOf(time.Duration(int64(x.Uint()))))
 // 	// 		return true, nil
-// 	// 	case canFloat(x):
+// 	// 	case utils.CanFloat(x):
 // 	// 		v.Set(reflect.ValueOf(time.Duration(int64(x.Float()))))
 // 	// 		return true, nil
 // 	// 	}
-// 	// case canError(v):
+// 	// case utils.CanError(v):
 // 	// 	switch {
-// 	// 	case canString(x):
+// 	// 	case utils.CanString(x):
 // 	// 		v.Set(reflect.ValueOf(errors.New(x.String())))
 // 	// 		return true, nil
 // 	// 	}
@@ -915,19 +916,19 @@ func (f *StructField) set(v, x reflect.Value) (bool, error) {
 // 	if dest == nil {
 // 		return f.SetNil()
 // 	}
-// 	// v = Preset(v) // make sure no pointers points to something concrete, instead of nil
+// 	// v = utils.Preset(v) // make sure no pointers points to something concrete, instead of nil
 // 	x := reflect.ValueOf(dest)
 // 	// vi := v.Interface()
 // 	// xi := x.Interface()
 // 	// fmt.Printf("%s: vi: %v; xi: %v.\n", fName, vi, xi)
 // 	// switch {
-// 	// case canSlice(v):
-// 	// 	if canSlice(x) {
+// 	// case utils.CanSlice(v):
+// 	// 	if utils.CanSlice(x) {
 // 	// 		v.Set(x)
 // 	// 		return nil
 // 	// 	}
-// 	// case canMap(v):
-// 	// 	if canMap(x) {
+// 	// case utils.CanMap(v):
+// 	// 	if utils.CanMap(x) {
 // 	// 		v.Set(x)
 // 	// 		return nil
 // 	// 	}
@@ -974,29 +975,29 @@ func (f *StructField) equal(x reflect.Value) int {
 	// 	return OutOfRange
 	// }
 	switch {
-	case canDuration(v) && canDuration(x):
-		if Duration(v) == Duration(x) {
+	case utils.CanDuration(v) && utils.CanDuration(x):
+		if utils.Duration(v) == utils.Duration(x) {
 			return f.Index()
 		}
-	case canTime(v) && canTime(x):
-		if Time(v) == Time(x) {
+	case utils.CanTime(v) && utils.CanTime(x):
+		if utils.Time(v) == utils.Time(x) {
 			return f.Index()
 		}
-	case canError(v) && canError(x):
-		errV := Error(v)
-		errX := Error(x)
+	case utils.CanError(v) && utils.CanError(x):
+		errV := utils.Error(v)
+		errX := utils.Error(x)
 		if errV.Error() == errX.Error() { // if errors.Is(errV, errX) {
 			return f.Index()
 		}
-	case canString(v) && canString(x):
+	case utils.CanString(v) && utils.CanString(x):
 		if v.String() == x.String() {
 			return f.Index()
 		}
-	case canBool(v) && canBool(x):
+	case utils.CanBool(v) && utils.CanBool(x):
 		if v.Bool() == x.Bool() {
 			return f.Index()
 		}
-	case canInt(v) && canInt(x):
+	case utils.CanInt(v) && utils.CanInt(x):
 		int64V := v.Int()
 		int64X := x.Int()
 		if v.OverflowInt(int64X) {
@@ -1005,7 +1006,7 @@ func (f *StructField) equal(x reflect.Value) int {
 		if int64V == int64X {
 			return f.Index()
 		}
-	case canUint(v) && canUint(x):
+	case utils.CanUint(v) && utils.CanUint(x):
 		uint64V := v.Uint()
 		uint64X := x.Uint()
 		if v.OverflowUint(uint64X) {
@@ -1014,7 +1015,7 @@ func (f *StructField) equal(x reflect.Value) int {
 		if uint64V == uint64X {
 			return f.Index()
 		}
-	case canFloat(v) && canFloat(x):
+	case utils.CanFloat(v) && utils.CanFloat(x):
 		float64V := v.Float()
 		float64X := x.Float()
 		if v.OverflowFloat(float64X) {
@@ -1023,7 +1024,7 @@ func (f *StructField) equal(x reflect.Value) int {
 		if float64V == float64X {
 			return f.Index()
 		}
-	case canComplex(v) && canComplex(x):
+	case utils.CanComplex(v) && utils.CanComplex(x):
 		complex128V := v.Complex()
 		complex128X := x.Complex()
 		if v.OverflowComplex(complex128X) {
@@ -1032,7 +1033,7 @@ func (f *StructField) equal(x reflect.Value) int {
 		if complex128V == complex128X {
 			return f.Index()
 		}
-	case canBytes(v) && canBytes(x):
+	case utils.CanBytes(v) && utils.CanBytes(x):
 		if bytes.Equal(v.Bytes(), x.Bytes()) {
 			return f.Index()
 		}
@@ -1041,7 +1042,7 @@ func (f *StructField) equal(x reflect.Value) int {
 			return f.Index()
 		}
 	default:
-		// case canPtr(v) && canPtr(x): v.SetPointer(x.Pointer()); return nil
+		// case utils.CanPtr(v) && utils.CanPtr(x): v.SetPointer(x.Pointer()); return nil
 		// case reflect.Invalid:
 		// case reflect.Slice:
 		// case reflect.Array:
@@ -1070,23 +1071,23 @@ func (f *StructField) assignableTo(x reflect.Value) bool {
 		// fmt.Println("vt.String() == xt.String()")
 		return true
 
-	case canInterface(v): // canInterface(x): no need; x came from interface{} dest
-		// fmt.Println("canInterface(v)")
+	case utils.CanInterface(v): // utils.CanInterface(x): no need; x came from interface{} dest
+		// fmt.Println("utils.CanInterface(v)")
 		return true
 
 		// case vt.ConvertibleTo(xt): // Not Used?
 		// 	// fmt.Println("vt.ConvertibleTo(xt)")
 		// 	return true
-		// case canError(v) && canError(x):
+		// case utils.CanError(v) && utils.CanError(x):
 		// 	// fmt.Println("canError(v) && canError(x)")
 		// 	return true
-		// case canTime(v) && canTime(x):
+		// case utils.CanTime(v) && utils.CanTime(x):
 		// 	// fmt.Println("canTime(v) && canTime(x)")
 		// 	return true
-		// case canDuration(v) && canDuration(x):
+		// case utils.CanDuration(v) && utils.CanDuration(x):
 		// 	// 	fmt.Println("canDuration(v) && canDuration(x)")
 		// 	return true
-		// case canStruct(v):
+		// case utils.CanStruct(v):
 		// 	fmt.Println("canStruct(v)")
 		// 	s, err := New(x.Interface(), f.Parent)
 		// 	if err != nil {
@@ -1096,9 +1097,9 @@ func (f *StructField) assignableTo(x reflect.Value) bool {
 		// 		return errors.Errorf("wrong struct name for field %s. got: '%s' want: '%s'", f.Namespace(), s.Name(), Type(v))
 		// 	}
 		// 	return true
-		// case canSlice(v):
+		// case utils.CanSlice(v):
 		// 	fmt.Println("canSlice(v)")
-		// 	if canSlice(x) {
+		// 	if utils.CanSlice(x) {
 		// 		return true
 		// 	}
 		// 	// Value struct
@@ -1111,9 +1112,9 @@ func (f *StructField) assignableTo(x reflect.Value) bool {
 		// 	// //
 		// 	// // As a special case, src can have kind String if the element type of dst is kind Uint8.
 		// 	// func Copy(dst, src Value) int
-		// case canMap(v):
+		// case utils.CanMap(v):
 		// 	// fmt.Println("canMap(v)")
-		// 	if canMap(x) {
+		// 	if utils.CanMap(x) {
 		// 		return true
 		// 	}
 	}

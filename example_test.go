@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/roninzo/structs"
+	"github.com/roninzo/structs/pointers"
 )
 
 /*   S t r u c t V a l u e   */
@@ -98,10 +99,10 @@ func ExampleNew_pointerFields() {
 	}
 
 	server := Server{
-		Name:    structs.PtrString("Roninzo"),
-		ID:      structs.PtrUint(uint(123456)),
-		Enabled: structs.PtrBool(true),
-		Count:   structs.PtrInt32(int32(5)),
+		Name:    pointers.String("Roninzo"),
+		ID:      pointers.Uint(uint(123456)),
+		Enabled: pointers.Bool(true),
+		Count:   pointers.Int32(int32(5)),
 	}
 
 	s, err := structs.New(&server)
@@ -115,17 +116,17 @@ func ExampleNew_pointerFields() {
 	fmt.Printf("Value of Count : %v\n", s.Field("Count").PtrValue())
 	fmt.Printf("Sprint: %s.\n", s.Sprint())
 
-	err = s.Field("ID").Set(structs.PtrUint(uint(654321)))
+	err = s.Field("ID").Set(pointers.Uint(uint(654321)))
 	if err != nil {
 		fmt.Printf("Error          : %v\n", err)
 	}
 
-	err = s.Field("Count").Set(structs.PtrInt32(int32(6)))
+	err = s.Field("Count").Set(pointers.Int32(int32(6)))
 	if err != nil {
 		fmt.Printf("Error          : %v\n", err)
 	}
 
-	err = s.Field("Enabled").Set(structs.PtrInt32(int32(6))) // not compatible with bool
+	err = s.Field("Enabled").Set(pointers.Int32(int32(6))) // not compatible with bool
 	if err != nil {
 		fmt.Printf("Error          : %v\n", err)
 	}
@@ -377,17 +378,17 @@ func ExampleStructValue_PtrValues() {
 	}
 
 	program := Program{
-		Name: structs.PtrString("Apache"),
+		Name: pointers.String("Apache"),
 	}
 
 	server := Server{
-		Name:       structs.PtrString("Roninzo"),
-		ID:         structs.PtrUint(123456),
-		Enabled:    structs.PtrBool(true),
-		Count:      structs.PtrInt(0),
+		Name:       pointers.String("Roninzo"),
+		ID:         pointers.Uint(123456),
+		Enabled:    pointers.Bool(true),
+		Count:      pointers.Int(0),
 		Program:    &program,
-		Password:   structs.PtrString("abcdefg"),
-		unexported: structs.PtrBool(true),
+		Password:   pointers.String("abcdefg"),
+		unexported: pointers.Bool(true),
 	}
 
 	s, err := structs.New(&server)
@@ -1802,15 +1803,15 @@ var structV structTest = structTest{
 	Time:            time.Date(2021, time.August, 3, 16, 44, 46, 0, time.UTC),
 	Duration:        5 * time.Second,
 	NestedStruct:    structNested{Uint: 122334, String: "Apache"},
-	PtrString:       structs.PtrString("Roninzo"),
-	PtrBool:         structs.PtrBool(true),
-	PtrInt:          structs.PtrInt(8),
-	PtrUint:         structs.PtrUint(uint(123456)),
-	PtrFloat:        structs.PtrFloat32(1922.50),
-	PtrComplex:      structs.PtrComplex128(complex(22, 50)),
-	PtrError:        structs.PtrError(errors.New("rows not found")),
-	PtrTime:         structs.PtrTime(time.Date(2021, time.August, 3, 16, 44, 46, 0, time.UTC)),
-	PtrDuration:     structs.PtrDuration(5 * time.Second),
+	PtrString:       pointers.String("Roninzo"),
+	PtrBool:         pointers.Bool(true),
+	PtrInt:          pointers.Int(8),
+	PtrUint:         pointers.Uint(uint(123456)),
+	PtrFloat:        pointers.Float32(1922.50),
+	PtrComplex:      pointers.Complex128(complex(22, 50)),
+	PtrError:        pointers.Error(errors.New("rows not found")),
+	PtrTime:         pointers.Time(time.Date(2021, time.August, 3, 16, 44, 46, 0, time.UTC)),
+	PtrDuration:     pointers.Duration(5 * time.Second),
 	PtrNestedStruct: &structNested{Uint: 122334, String: "Apache"},
 	MapString:       map[string]string{"A": "one", "B": "two", "C": "three"},
 	MapBool:         map[string]bool{"A": true, "B": false},
@@ -1826,12 +1827,12 @@ var structV structTest = structTest{
 	SliceFloat:      []float32{1.1, 1.2, 1.3},
 	SliceComplex:    []complex128{complex(1, 1), complex(1, 2), complex(1, 3)},
 	SliceInterface:  []interface{}{1, "two", 3.0},
-	SlicePtrString:  []*string{structs.PtrString("one"), structs.PtrString("two"), structs.PtrString("three")},
-	SlicePtrBool:    []*bool{structs.PtrBool(true), structs.PtrBool(false)},
-	SlicePtrInt:     []*int{structs.PtrInt(1), structs.PtrInt(2), structs.PtrInt(3)},
-	SlicePtrUint:    []*uint{structs.PtrUint(uint(1)), structs.PtrUint(uint(2)), structs.PtrUint(uint(3))},
-	SlicePtrFloat:   []*float32{structs.PtrFloat32(1.1), structs.PtrFloat32(1.2), structs.PtrFloat32(1.3)},
-	SlicePtrComplex: []*complex128{structs.PtrComplex128(complex(1, 1)), structs.PtrComplex128(complex(1, 2)), structs.PtrComplex128(complex(1, 3))},
+	SlicePtrString:  []*string{pointers.String("one"), pointers.String("two"), pointers.String("three")},
+	SlicePtrBool:    []*bool{pointers.Bool(true), pointers.Bool(false)},
+	SlicePtrInt:     []*int{pointers.Int(1), pointers.Int(2), pointers.Int(3)},
+	SlicePtrUint:    []*uint{pointers.Uint(uint(1)), pointers.Uint(uint(2)), pointers.Uint(uint(3))},
+	SlicePtrFloat:   []*float32{pointers.Float32(1.1), pointers.Float32(1.2), pointers.Float32(1.3)},
+	SlicePtrComplex: []*complex128{pointers.Complex128(complex(1, 1)), pointers.Complex128(complex(1, 2)), pointers.Complex128(complex(1, 3))},
 	Hidden:          "abcdefg",
 	unexported:      true,
 }
@@ -1849,15 +1850,15 @@ var structX structTest = structTest{
 	Time:            time.Date(2021, time.August, 31, 14, 11, 11, 0, time.UTC),
 	Duration:        30 * time.Second,
 	NestedStruct:    structNested{Uint: 443211, String: "Microsoft IIS"},
-	PtrString:       structs.PtrString("ozninoR"),
-	PtrBool:         structs.PtrBool(false),
-	PtrInt:          structs.PtrInt(3),
-	PtrUint:         structs.PtrUint(uint(654321)),
-	PtrFloat:        structs.PtrFloat32(7622.50),
-	PtrComplex:      structs.PtrComplex128(complex(-67, -42)),
-	PtrError:        structs.PtrError(errors.New("not compliant")),
-	PtrTime:         structs.PtrTime(time.Date(2021, time.August, 31, 14, 11, 11, 0, time.UTC)),
-	PtrDuration:     structs.PtrDuration(30 * time.Second),
+	PtrString:       pointers.String("ozninoR"),
+	PtrBool:         pointers.Bool(false),
+	PtrInt:          pointers.Int(3),
+	PtrUint:         pointers.Uint(uint(654321)),
+	PtrFloat:        pointers.Float32(7622.50),
+	PtrComplex:      pointers.Complex128(complex(-67, -42)),
+	PtrError:        pointers.Error(errors.New("not compliant")),
+	PtrTime:         pointers.Time(time.Date(2021, time.August, 31, 14, 11, 11, 0, time.UTC)),
+	PtrDuration:     pointers.Duration(30 * time.Second),
 	PtrNestedStruct: &structNested{Uint: 443211, String: "Microsoft IIS"},
 	MapString:       map[string]string{"D": "four", "E": "five", "F": "six"},
 	MapBool:         map[string]bool{"D": false, "E": true},
@@ -1873,12 +1874,12 @@ var structX structTest = structTest{
 	SliceFloat:      []float32{1.4, 1.5, 1.6},
 	SliceComplex:    []complex128{complex(1, 4), complex(1, 5), complex(1, 6)},
 	SliceInterface:  []interface{}{4, "five", 6.0},
-	SlicePtrString:  []*string{structs.PtrString("four"), structs.PtrString("five"), structs.PtrString("six")},
-	SlicePtrBool:    []*bool{structs.PtrBool(false), structs.PtrBool(true)},
-	SlicePtrInt:     []*int{structs.PtrInt(4), structs.PtrInt(5), structs.PtrInt(6)},
-	SlicePtrUint:    []*uint{structs.PtrUint(uint(4)), structs.PtrUint(uint(5)), structs.PtrUint(uint(6))},
-	SlicePtrFloat:   []*float32{structs.PtrFloat32(1.4), structs.PtrFloat32(1.5), structs.PtrFloat32(1.6)},
-	SlicePtrComplex: []*complex128{structs.PtrComplex128(complex(1, 4)), structs.PtrComplex128(complex(1, 5)), structs.PtrComplex128(complex(1, 6))},
+	SlicePtrString:  []*string{pointers.String("four"), pointers.String("five"), pointers.String("six")},
+	SlicePtrBool:    []*bool{pointers.Bool(false), pointers.Bool(true)},
+	SlicePtrInt:     []*int{pointers.Int(4), pointers.Int(5), pointers.Int(6)},
+	SlicePtrUint:    []*uint{pointers.Uint(uint(4)), pointers.Uint(uint(5)), pointers.Uint(uint(6))},
+	SlicePtrFloat:   []*float32{pointers.Float32(1.4), pointers.Float32(1.5), pointers.Float32(1.6)},
+	SlicePtrComplex: []*complex128{pointers.Complex128(complex(1, 4)), pointers.Complex128(complex(1, 5)), pointers.Complex128(complex(1, 6))},
 	Hidden:          "gfedcba",
 	unexported:      false,
 }
@@ -3987,45 +3988,45 @@ func ExampleStructField_Equal_pointerFields() {
 	}
 
 	program1 := Program{
-		Name: structs.PtrString("Apache"),
+		Name: pointers.String("Apache"),
 	}
 
 	server1 := Server{
-		Name:       structs.PtrString("Roninzo"),
-		ID:         structs.PtrUint(123456),
-		Enabled:    structs.PtrBool(true),
-		Err:        structs.PtrError(errors.New("rows not found")),
-		ChangedAt:  structs.PtrTime(time.Date(2021, time.August, 3, 16, 44, 46, 0, time.UTC)),
-		TimeOut:    structs.PtrDuration(5 * time.Second),
-		Count:      structs.PtrInt(8),
-		Price:      structs.PtrFloat32(1922.50),
-		Stream:     structs.PtrBytes([]byte("Hello world")),
-		Complex:    structs.PtrComplex128(complex(22, 50)),
+		Name:       pointers.String("Roninzo"),
+		ID:         pointers.Uint(123456),
+		Enabled:    pointers.Bool(true),
+		Err:        pointers.Error(errors.New("rows not found")),
+		ChangedAt:  pointers.Time(time.Date(2021, time.August, 3, 16, 44, 46, 0, time.UTC)),
+		TimeOut:    pointers.Duration(5 * time.Second),
+		Count:      pointers.Int(8),
+		Price:      pointers.Float32(1922.50),
+		Stream:     pointers.Bytes([]byte("Hello world")),
+		Complex:    pointers.Complex128(complex(22, 50)),
 		Anything:   "test",
 		Program:    &program1,
-		Password:   structs.PtrString("abcdefg"),
-		unexported: structs.PtrBool(true),
+		Password:   pointers.String("abcdefg"),
+		unexported: pointers.Bool(true),
 	}
 
 	program2 := Program{
-		Name: structs.PtrString("Microsoft IIS"),
+		Name: pointers.String("Microsoft IIS"),
 	}
 
 	server2 := Server{
-		Name:       structs.PtrString("ozninoR"),
-		ID:         structs.PtrUint(654321),
-		Enabled:    structs.PtrBool(false),
-		Err:        structs.PtrError(errors.New("not compliant")),
-		ChangedAt:  structs.PtrTime(time.Date(2021, time.August, 31, 14, 11, 11, 0, time.UTC)),
-		TimeOut:    structs.PtrDuration(30 * time.Second),
-		Count:      structs.PtrInt(3),
-		Price:      structs.PtrFloat32(7022.50),
-		Stream:     structs.PtrBytes([]byte("Bye bye world")),
-		Complex:    structs.PtrComplex128(complex(99, 12)),
+		Name:       pointers.String("ozninoR"),
+		ID:         pointers.Uint(654321),
+		Enabled:    pointers.Bool(false),
+		Err:        pointers.Error(errors.New("not compliant")),
+		ChangedAt:  pointers.Time(time.Date(2021, time.August, 31, 14, 11, 11, 0, time.UTC)),
+		TimeOut:    pointers.Duration(30 * time.Second),
+		Count:      pointers.Int(3),
+		Price:      pointers.Float32(7022.50),
+		Stream:     pointers.Bytes([]byte("Bye bye world")),
+		Complex:    pointers.Complex128(complex(99, 12)),
 		Anything:   654321,
 		Program:    &program2,
-		Password:   structs.PtrString("gfedcba"),
-		unexported: structs.PtrBool(false),
+		Password:   pointers.String("gfedcba"),
+		unexported: pointers.Bool(false),
 	}
 
 	// backup <- server1 via cloning

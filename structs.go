@@ -275,6 +275,8 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
+	"github.com/roninzo/structs/embedded"
+	"github.com/roninzo/structs/utils"
 )
 
 /*   S t r u c t   d e f i n i t i o n   */
@@ -439,7 +441,7 @@ func (s *StructValue) Debug() string {
 		Value:  s.value.Interface(),
 		Rows:   s.rows.Interface(),
 		MaxRow: s.rows.Len(),
-		Kinds:  Kinds(s.kinds...),
+		Kinds:  utils.Kinds(s.kinds...),
 		Fields: fields,
 		Parent: p,
 		Error:  s.Error,
@@ -545,7 +547,7 @@ func (s *StructValue) Err() (err error) {
 // Path returns a comma separated string of reflect.Kind.String describing where the
 // struct was found inside the interface input of the New method.
 func (s *StructValue) Path() string {
-	return Kinds(s.kinds...)
+	return utils.Kinds(s.kinds...)
 }
 
 // Sprint returns struct as a string, similar to the Values method, but in a json indented format.
@@ -757,7 +759,7 @@ func (s *StructValue) getElem(v reflect.Value, t reflect.Type) (rv reflect.Value
 	if t.Kind() == reflect.Slice {
 		s.rows = v
 	}
-	rv, rt, err := structValueElem(v, t)
+	rv, rt, err := utils.StructValueElem(v, t)
 	if err != nil {
 		s.wrapErr(err)
 	}
@@ -782,8 +784,9 @@ func (s *StructValue) appendKind(t reflect.Type) {
 // pushing remaining struct fields further down the order.
 func (s *StructValue) getFields() {
 	if s.fieldsByIndex == nil {
-		m := make(map[int]unembeddeds)
-		explodeEmbedded(s.value, s.value.Type(), m, nil, nil, nil)
+		v := s.value
+		m := make(map[int]embedded.Unembeddeds)
+		embedded.Explode(v, v.Type(), m, nil, nil, nil)
 		n := len(m)
 		s.initFields(n)
 		for i := 0; i < n; i++ {

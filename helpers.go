@@ -5,6 +5,7 @@
 package structs
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -12,6 +13,40 @@ import (
 )
 
 /*   F u n c t i o n s   */
+
+// // Struct returns the StructValue object or panics (returns nil).
+// func Struct(v reflect.Value) *StructValue {
+// 	i := v.Interface()
+// 	// Is dest already a *StructValue? ...
+// 	if s, ok := i.(*StructValue); ok {
+// 		return s
+// 	}
+// 	//... else, create it!
+// 	s, err := New(i)
+// 	if err != nil {
+// 		panic(err) // return nil
+// 	}
+// 	return s
+// }
+
+// Sprint returns a MarshalIndent string.
+//
+// BUG(roninzo): Sprint uses json marshaling which does not support complex
+// types (complex64/complex128).
+func Sprint(dest interface{}) string {
+	// s := fmt.Sprintf("%#v", t)
+	// m := make(map[string]interface{}) // convert dest to m first?
+	// http://choly.ca/post/go-json-marshalling/
+	// https://www.py4u.net/discuss/1206302
+	// https://play.golang.org/p/MuW6gwSAKi
+	// https://attilaolah.eu/2013/11/29/json-decoding-in-go/
+	// https://mariadesouza.com/2017/09/07/custom-unmarshal-json-in-golang/
+	j, err := json.MarshalIndent(dest, " ", "\t")
+	if err != nil {
+		return err.Error()
+	}
+	return string(j)
+}
 
 // Name returns the structs's type name within its package. It returns an
 // empty string for unnamed types. It returns an error if s's kind is

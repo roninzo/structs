@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/roninzo/structs/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,7 @@ func TestNewStruct(t *testing.T) {
 	}
 	s, err := New(t1)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, Kinds(reflect.Struct), s.Path())
+	assert.Equal(t, utils.Kinds(reflect.Struct), s.Path())
 	assert.Equal(t, reflect.Struct.String(), s.Kind().String())
 	assert.Equal(t, 3, s.NumField())
 	assert.Equal(t, false, s.HasNested())
@@ -58,7 +59,7 @@ func TestNewPtrToStruct(t *testing.T) {
 	}
 	s, err := New(&t1)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, Kinds(reflect.Ptr, reflect.Struct), s.Path())
+	assert.Equal(t, utils.Kinds(reflect.Ptr, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
 	assert.Equal(t, "T1", s.Namespace())
 	assert.Equal(t, false, s.IsNested())
@@ -84,7 +85,7 @@ func TestNewPtrToSliceOfStruct(t *testing.T) {
 	second := []T1{t1}
 	s, err := New(&second)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, Kinds(reflect.Ptr, reflect.Slice, reflect.Struct), s.Path())
+	assert.Equal(t, utils.Kinds(reflect.Ptr, reflect.Slice, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
 	assert.Equal(t, "T1", s.Namespace())
 	assert.Equal(t, false, s.IsNested())
@@ -110,7 +111,7 @@ func TestNewSliceOfStruct(t *testing.T) {
 	second := []T1{t1}
 	s, err := New(second)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, Kinds(reflect.Slice, reflect.Struct), s.Path())
+	assert.Equal(t, utils.Kinds(reflect.Slice, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
 	assert.Equal(t, "T1", s.Namespace())
 	assert.Equal(t, false, s.IsNested())
@@ -136,7 +137,7 @@ func TestNewSliceOfPtrToStruct(t *testing.T) {
 	second := []*T1{&t1}
 	s, err := New(second)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, Kinds(reflect.Slice, reflect.Ptr, reflect.Struct), s.Path())
+	assert.Equal(t, utils.Kinds(reflect.Slice, reflect.Ptr, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
 	assert.Equal(t, "T1", s.Namespace())
 	assert.Equal(t, false, s.IsNested())
