@@ -83,6 +83,36 @@ func (f *StructField) Name() string {
 	return f.field.Name
 }
 
+// JSONName returns returns the string name of StructField
+// defined in its related json struct tag, else it generates it.
+func (f *StructField) JSONName() string {
+	tag, ok := f.Tag("json")
+	if ok && tag != "-" {
+		tag = strings.TrimSuffix(tag, ",omitempty")
+		return tag
+	}
+
+	// import "github.com/asaskevich/govalidator"
+	// return govalidator.CamelCaseToUnderscore(f.field.Name)
+	col := f.field.Name
+	return utils.CamelCaseToUnderscore(col)
+}
+
+// Default returns returns the string default value of StructField
+// defined in its related default struct tag, else returns empty string.
+func (f *StructField) Default() string {
+	tag, ok := f.Tag("default")
+	if ok && tag != "-" {
+		// string:   Roninzo
+		// number:   12
+		// decimal:  3.99
+		// bool:     false
+		// datetime: 2020-12-11T01:00:00+02:00
+		return tag
+	}
+	return ""
+}
+
 // Namespace is similar to the Name method, except that it includes its related struct names
 // all the way to the top level struct (in a dot separated string).
 func (f *StructField) Namespace() (n string) {

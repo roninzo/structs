@@ -1084,49 +1084,49 @@ func ExampleStructValue_Diff() {
 	}
 
 	// Output:
-	// Diff[Bool]: false.
-	// Diff[Bytes]: "QnllIGJ5ZSB3b3JsZA==".
-	// Diff[Complex]: json: unsupported type: complex128.
-	// Diff[Duration]: 30000000000.
-	// Diff[Error]: "not compliant".
-	// Diff[Float]: 7622.5.
-	// Diff[Hidden]: "gfedcba".
-	// Diff[Int]: 3.
-	// Diff[Interface]: 3.99.
-	// Diff[MapBool]: {"D":false,"E":true}.
-	// Diff[MapComplex]: json: unsupported type: complex128.
-	// Diff[MapFloat]: {"D":1.4,"E":1.5,"F":1.6}.
-	// Diff[MapInt]: {"D":4,"E":5,"F":6}.
-	// Diff[MapInterface]: {"D":4,"E":"five","F":6}.
-	// Diff[MapString]: {"D":"four","E":"five","F":"six"}.
-	// Diff[MapUint]: {"D":4,"E":5,"F":6}.
-	// Diff[NestedStruct]: {"uint":443211,"string":"Microsoft IIS"}.
-	// Diff[PtrBool]: false.
-	// Diff[PtrComplex]: json: unsupported type: complex128.
-	// Diff[PtrDuration]: 30000000000.
-	// Diff[PtrError]: {}.
-	// Diff[PtrFloat]: 7622.5.
-	// Diff[PtrInt]: 3.
-	// Diff[PtrNestedStruct]: {"uint":443211,"string":"Microsoft IIS"}.
-	// Diff[PtrString]: "ozninoR".
-	// Diff[PtrTime]: "2021-08-31T14:11:11Z".
-	// Diff[PtrUint]: 654321.
-	// Diff[SliceBool]: [false,true].
-	// Diff[SliceComplex]: json: unsupported type: complex128.
-	// Diff[SliceFloat]: [1.4,1.5,1.6].
-	// Diff[SliceInt]: [4,5,6].
-	// Diff[SliceInterface]: [4,"five",6].
-	// Diff[SlicePtrBool]: [false,true].
-	// Diff[SlicePtrComplex]: json: unsupported type: complex128.
-	// Diff[SlicePtrFloat]: [1.4,1.5,1.6].
-	// Diff[SlicePtrInt]: [4,5,6].
-	// Diff[SlicePtrString]: ["four","five","six"].
-	// Diff[SlicePtrUint]: [4,5,6].
-	// Diff[SliceString]: ["four","five","six"].
-	// Diff[SliceUint]: [4,5,6].
-	// Diff[String]: "ozninoR".
-	// Diff[Time]: "2021-08-31T14:11:11Z".
-	// Diff[Uint]: 654321.
+	// Diff[bool]: false.
+	// Diff[bytes]: "QnllIGJ5ZSB3b3JsZA==".
+	// Diff[complex]: json: unsupported type: complex128.
+	// Diff[duration]: 30000000000.
+	// Diff[error]: "not compliant".
+	// Diff[float]: 7622.5.
+	// Diff[hidden]: "gfedcba".
+	// Diff[int]: 3.
+	// Diff[interface]: 3.99.
+	// Diff[map_bool]: {"D":false,"E":true}.
+	// Diff[map_complex]: json: unsupported type: complex128.
+	// Diff[map_float]: {"D":1.4,"E":1.5,"F":1.6}.
+	// Diff[map_interface]: {"D":4,"E":"five","F":6}.
+	// Diff[map_string]: {"D":"four","E":"five","F":"six"}.
+	// Diff[map_uint]: {"D":4,"E":5,"F":6}.
+	// Diff[mapint]: {"D":4,"E":5,"F":6}.
+	// Diff[nested_struct]: {"uint":443211,"string":"Microsoft IIS"}.
+	// Diff[pointer_bool]: false.
+	// Diff[pointer_complex]: json: unsupported type: complex128.
+	// Diff[pointer_duration]: 30000000000.
+	// Diff[pointer_error]: {}.
+	// Diff[pointer_float]: 7622.5.
+	// Diff[pointer_int]: 3.
+	// Diff[pointer_nested_struct]: {"uint":443211,"string":"Microsoft IIS"}.
+	// Diff[pointer_string]: "ozninoR".
+	// Diff[pointer_time]: "2021-08-31T14:11:11Z".
+	// Diff[pointer_uint]: 654321.
+	// Diff[slice_bool]: [false,true].
+	// Diff[slice_complex]: json: unsupported type: complex128.
+	// Diff[slice_float]: [1.4,1.5,1.6].
+	// Diff[slice_int]: [4,5,6].
+	// Diff[slice_interface]: [4,"five",6].
+	// Diff[slice_pointer_bool]: [false,true].
+	// Diff[slice_pointer_complex]: json: unsupported type: complex128.
+	// Diff[slice_pointer_float]: [1.4,1.5,1.6].
+	// Diff[slice_pointer_int]: [4,5,6].
+	// Diff[slice_pointer_string]: ["four","five","six"].
+	// Diff[slice_pointer_uint]: [4,5,6].
+	// Diff[slice_string]: ["four","five","six"].
+	// Diff[slice_uint]: [4,5,6].
+	// Diff[string]: "ozninoR".
+	// Diff[time]: "2021-08-31T14:11:11Z".
+	// Diff[uint]: 654321.
 }
 
 /*   S t r u c t F i e l d   */

@@ -48,10 +48,7 @@ func Sprint(dest interface{}) string {
 	return string(j)
 }
 
-// Sprint returns a MarshalIndent string.
-//
-// BUG(roninzo): Sprint uses json marshaling which does not support complex
-// types (complex64/complex128).
+// Sprint returns a Marshal one-line string (without indenting).
 func SprintCompact(dest interface{}) string {
 	j, err := json.Marshal(dest)
 	if err != nil {

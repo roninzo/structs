@@ -699,19 +699,18 @@ func (s *StructValue) MapFunc(handler func(reflect.Value) error) (*StructValue, 
 	return s, nil
 }
 
-// Diff
+// Diff returns the differences in field values between two StructValue.
 func (s *StructValue) Diff(c *StructValue) (map[string]interface{}, error) {
 	diffs := make(map[string]interface{})
-	for _, sField := range s.Fields() {
-		if sField.IsExported() {
-			col := sField.Name()
-			cField := c.Field(col)
+	for _, f := range s.Fields() {
+		if f.IsExported() {
+			cField := c.Field(f.Name())
 			err := c.Err()
 			if err != nil {
 				return nil, err
 			}
-			if !sField.Equal(cField) {
-				diffs[col], err = sField.Get()
+			if !f.Equal(cField) {
+				diffs[f.JSONName()], err = f.Get()
 				if err != nil {
 					return diffs, err
 				}
