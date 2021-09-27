@@ -2,6 +2,7 @@ package structs_test
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -1050,6 +1051,82 @@ func ExampleStructValue_Rows_empty() {
 
 	// Output:
 	// Rows[Error]: struct rows not found.
+}
+
+func ExampleStructValue_Diff() {
+	s1, err := structs.New(&structV)
+	if err != nil {
+		fmt.Printf("New[Error]: %v.\n", err)
+		return
+	}
+
+	s2, err := structs.New(&structX)
+	if err != nil {
+		fmt.Printf("New[Error]: %v.\n", err)
+		return
+	}
+
+	diffs, err := s2.Diff(s1)
+	if err != nil {
+		fmt.Printf("Diff[Error]: %v.\n", err)
+		return
+	}
+
+	keys := make([]string, len(diffs))
+	i := 0
+	for key, _ := range diffs {
+		keys[i] = key
+		i++
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		fmt.Printf("Diff[%s]: %+v.\n", key, structs.SprintCompact(diffs[key]))
+	}
+
+	// Output:
+	// Diff[Bool]: false.
+	// Diff[Bytes]: "QnllIGJ5ZSB3b3JsZA==".
+	// Diff[Complex]: json: unsupported type: complex128.
+	// Diff[Duration]: 30000000000.
+	// Diff[Error]: "not compliant".
+	// Diff[Float]: 7622.5.
+	// Diff[Hidden]: "gfedcba".
+	// Diff[Int]: 3.
+	// Diff[Interface]: 3.99.
+	// Diff[MapBool]: {"D":false,"E":true}.
+	// Diff[MapComplex]: json: unsupported type: complex128.
+	// Diff[MapFloat]: {"D":1.4,"E":1.5,"F":1.6}.
+	// Diff[MapInt]: {"D":4,"E":5,"F":6}.
+	// Diff[MapInterface]: {"D":4,"E":"five","F":6}.
+	// Diff[MapString]: {"D":"four","E":"five","F":"six"}.
+	// Diff[MapUint]: {"D":4,"E":5,"F":6}.
+	// Diff[NestedStruct]: {"uint":443211,"string":"Microsoft IIS"}.
+	// Diff[PtrBool]: false.
+	// Diff[PtrComplex]: json: unsupported type: complex128.
+	// Diff[PtrDuration]: 30000000000.
+	// Diff[PtrError]: {}.
+	// Diff[PtrFloat]: 7622.5.
+	// Diff[PtrInt]: 3.
+	// Diff[PtrNestedStruct]: {"uint":443211,"string":"Microsoft IIS"}.
+	// Diff[PtrString]: "ozninoR".
+	// Diff[PtrTime]: "2021-08-31T14:11:11Z".
+	// Diff[PtrUint]: 654321.
+	// Diff[SliceBool]: [false,true].
+	// Diff[SliceComplex]: json: unsupported type: complex128.
+	// Diff[SliceFloat]: [1.4,1.5,1.6].
+	// Diff[SliceInt]: [4,5,6].
+	// Diff[SliceInterface]: [4,"five",6].
+	// Diff[SlicePtrBool]: [false,true].
+	// Diff[SlicePtrComplex]: json: unsupported type: complex128.
+	// Diff[SlicePtrFloat]: [1.4,1.5,1.6].
+	// Diff[SlicePtrInt]: [4,5,6].
+	// Diff[SlicePtrString]: ["four","five","six"].
+	// Diff[SlicePtrUint]: [4,5,6].
+	// Diff[SliceString]: ["four","five","six"].
+	// Diff[SliceUint]: [4,5,6].
+	// Diff[String]: "ozninoR".
+	// Diff[Time]: "2021-08-31T14:11:11Z".
+	// Diff[Uint]: 654321.
 }
 
 /*   S t r u c t F i e l d   */

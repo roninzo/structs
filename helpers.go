@@ -48,6 +48,18 @@ func Sprint(dest interface{}) string {
 	return string(j)
 }
 
+// Sprint returns a MarshalIndent string.
+//
+// BUG(roninzo): Sprint uses json marshaling which does not support complex
+// types (complex64/complex128).
+func SprintCompact(dest interface{}) string {
+	j, err := json.Marshal(dest)
+	if err != nil {
+		return err.Error()
+	}
+	return string(j)
+}
+
 // Name returns the structs's type name within its package. It returns an
 // empty string for unnamed types. It returns an error if s's kind is
 // not struct.
@@ -238,9 +250,45 @@ func Forward(dest, src interface{}) error {
 	return s2.Forward(s1)
 }
 
-// Compare returns dest boolean comparing two struct.
+// Compare returns dest boolean comparing two structs.
 func Compare(dest, src interface{}) bool {
 	return reflect.DeepEqual(dest, src)
+}
+
+// Diff returns differences between two structs.
+// Where diffs stores values from dest indexed by column names.
+func Diff(dest, src interface{}) (map[string]interface{}, error) {
+	// ctx will be the context error returned
+	// by this func if anything goes wrong
+	ctx := "could not compare values to target struct"
+	//
+	// Both interfaces must be valid structs for this to work
+	s1, err := New(src)
+	if err != nil {
+		return nil, errors.Wrap(err, ctx)
+	}
+	s2, err := New(dest)
+	if err != nil {
+		return nil, errors.Wrap(err, ctx)
+	}
+	//
+	// ctx content can now now be improved
+	ctx = fmt.Sprintf("could not compare values to target struct '%s'", s2.Name())
+	//
+	// StructValue names must be the same
+	if s1.Name() != s2.Name() {
+		return nil, errors.Wrap(errors.Errorf("target struct name is invalid: want: '%s', got: '%s'", s1.Name(), s2.Name()), ctx)
+	}
+	//
+	// Both interfaces must be singulars of struct, not multiples
+	if s1.Multiple() {
+		return nil, errors.Wrap(errors.Errorf("source is a slice of struct %s", s1.Name()), ctx)
+	}
+	if s2.Multiple() {
+		return nil, errors.Wrap(errors.Errorf("target is a slice of struct %s", s2.Name()), ctx)
+	}
+	//
+	return s2.Diff(s1)
 }
 
 // Replace returns a copy of the struct dest with the first n non-overlapping

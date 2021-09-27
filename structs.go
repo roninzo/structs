@@ -699,6 +699,28 @@ func (s *StructValue) MapFunc(handler func(reflect.Value) error) (*StructValue, 
 	return s, nil
 }
 
+// Diff
+func (s *StructValue) Diff(c *StructValue) (map[string]interface{}, error) {
+	diffs := make(map[string]interface{})
+	for _, sField := range s.Fields() {
+		if sField.IsExported() {
+			col := sField.Name()
+			cField := c.Field(col)
+			err := c.Err()
+			if err != nil {
+				return nil, err
+			}
+			if !sField.Equal(cField) {
+				diffs[col], err = sField.Get()
+				if err != nil {
+					return diffs, err
+				}
+			}
+		}
+	}
+	return diffs, nil
+}
+
 /*   U n e x p o r t e d   */
 
 // findStruct finds where the struct is inside the reflect value and type.

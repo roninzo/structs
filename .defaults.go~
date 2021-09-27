@@ -1,0 +1,54 @@
+// Reference:
+// https://www.geeksforgeeks.org/how-to-assign-default-value-for-struct-field-in-golang/
+//
+// Another way of assigning default values to structs is by using tags.
+// Tags can only be used for string values only and can be implemented by using single quotes(”).
+//
+// Golang program to assign
+// default values to a struct
+// using tags
+
+package structs
+
+import (
+	"fmt"
+	"reflect"
+)
+
+// declaring a person struct
+type Person struct {
+
+	// setting the default value
+	// of name to "geek"
+	Name string `default:"geek" json:"name"`
+}
+
+func default_tag(p Person) string {
+
+	// TypeOf returns type of
+	// interface value passed to it
+	typ := reflect.TypeOf(p)
+
+	// checking if null string
+	if p.Name == "" {
+
+		// returns the struct field
+		// with the given parameter "name"
+		f, _ := typ.FieldByName("name")
+
+		// returns the value associated
+		// with key in the tag string
+		// and returns empty string if
+		// no such key in tag
+		p.Name = f.Tag.Get("default")
+	}
+
+	return fmt.Sprintf("%s", p.Name)
+}
+
+// main function
+func main() {
+
+	// prints out the default name
+	fmt.Println("Default name is:", default_tag(Person{}))
+}

@@ -182,7 +182,6 @@ ok  	github.com/roninzo/structs	10.581s
 - Extend support for Map of any Type as struct fields  
 - Extend support for Method of struct  
 - Extend support for complex64/128 field types
-- Implement Diff 
 - Implement Map
 - Improve performance
 - Improve coverage

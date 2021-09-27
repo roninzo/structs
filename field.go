@@ -214,11 +214,44 @@ func (f *StructField) Equal(x *StructField) bool {
 // Unexported struct fields will be neglected.
 func (f *StructField) Get() (interface{}, error) {
 	v := f.Value()
-	err := f.Parent.Err()
-	if err != nil {
+	if err := f.Parent.Err(); err != nil {
 		return nil, err
 	}
-	return v.Interface(), nil
+	switch {
+	case utils.CanDuration(v):
+		return utils.Duration(v), nil
+	case utils.CanTime(v):
+		return utils.Time(v), nil
+	case utils.CanError(v):
+		return utils.Error(v).Error(), nil
+	case utils.CanString(v):
+		return v.String(), nil
+	case utils.CanBool(v):
+		return v.Bool(), nil
+	case utils.CanInt(v):
+		return v.Int(), nil
+	case utils.CanUint(v):
+		return v.Uint(), nil
+	case utils.CanFloat(v):
+		return v.Float(), nil
+	case utils.CanComplex(v):
+		return v.Complex(), nil
+	case utils.CanBytes(v):
+		return v.Bytes(), nil
+	default:
+		// case v.CanInterface(), f.CanStruct():
+		// case utils.CanPtr(v) : return x.Pointer(), nil
+		// case reflect.Invalid:
+		// case reflect.Slice:
+		// case reflect.Array:
+		// case reflect.Map:
+		// case reflect.Func:
+		// case reflect.Chan:
+		// case reflect.Ptr:
+		// case reflect.Uintptr:
+		// case reflect.UnsafePointer:
+		return v.Interface(), nil
+	}
 }
 
 func (f *StructField) Time() time.Time         { v := f.value; return utils.Time(v) }
