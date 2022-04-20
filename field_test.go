@@ -65,7 +65,7 @@ func TestField(t *testing.T) {
 	assert.Equal(t, true, f.CanSet())
 	assert.Equal(t, false, f.IsAnonymous())
 	assert.Equal(t, true, f.IsExported())
-	assert.Equal(t, "T1.C", f.Namespace())
+	assert.Equal(t, "T1.C", f.FullName())
 	assert.Equal(t, false, f.CanDuration())
 	assert.Equal(t, false, f.CanTime())
 }
@@ -126,8 +126,7 @@ func TestFieldInvalidArg(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	f := s.Field("A")
-	i, err := f.Get()
-	assert.Equal(t, nil, err)
+	i := f.Get()
 	assert.Equal(t, "test", i.(string))
 
 	err = f.SetZero()
@@ -163,5 +162,5 @@ func TestFieldInvalidArg(t *testing.T) {
 	f = s.Field(true)
 	err = s.Err()
 	assert.NotEqual(t, nil, err)
-	assert.Equal(t, "invalid argument type; want: 'string' or 'int', got: 'bool'", err.Error())
+	assert.Equal(t, "invalid argument type; want: \"string\" or \"int\", got: \"bool\"", err.Error())
 }

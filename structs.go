@@ -47,7 +47,7 @@
 //   []*T    a slice of pointers to struct   New([]*T{&t})
 //
 //
-// NOTE: See the findStruct method for details on the above scenarios.
+// NOTE: See the IndirectStruct method for details on the above scenarios.
 //
 // Implementation
 //
@@ -148,13 +148,13 @@
 // Example:
 //   f := s.Field("Property")
 //   if f.CanString() {
-//      fmt.Printf("Property was equal to '%s'\n", s.String())
+//      fmt.Printf("Property was equal to %q\n", s.String())
 //      if f.CanSet() {
 //         err := f.SetString("Verified")
 //         if err != nil {
 //            return err
 //         }
-//         fmt.Printf("Property is now equal to '%s'\n", s.String())
+//         fmt.Printf("Property is now equal to %q\n", s.String())
 //      }
 //   }
 //
@@ -273,6 +273,9 @@ package structs
 import (
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/roninzo/structs/embedded"
@@ -300,32 +303,114 @@ type StructValue struct {
 //
 // BUG(roninzo): the New method behaves unexpectidely when passing in an
 // empty slice of pointers to structs.
+//
+//
+//
+//
+// StructValue.New
+// 	StructValue.findStruct(v, t) 		=> IndirectStruct
+// 		StructValue.getElem(v, t) 		=> IndirectValueAndType
+// 			utils.StructValueElem(v, t)
+//
+//
+//
+//
+// TODEL: New
+// Load parent StructValue, if any.
+//
+// TODEL: findStruct
+// findStruct finds where the struct is inside the reflect value and type.
+// By being chainable, findStruct uses withStruct to finalize successful completion
+// and exit the switch case below, all in a one-liner, otherwise it returns the
+// StructValue explictly at the end.
+// See the Support paragraph in the documentation for more details.
+//
+// TODEL: withStruct
+// withStruct returns StructValue object after setting reflect.Value of struct found.
+// By being chainable, withStruct can finalize StructValue and return it at the same time.
+//
+// TODEL: getElem
+// getElem returns the element or the first element of the reflection pointer value and type.
+// It saves an errors inside StructValue if the type's Kind is not Array, Ptr, or Slice.
+//
+// TODEL: appendKind
+// appendKind appends reflect type t to the slice of kinds in StructValue.
+// The first, it initialized kinds as a the slice of kinds.
+//
+// TODEL: utils.StructValueElem
+// StructValueElem follows the pointer v and returns the element it points to,
+// for borth reflect value and reflect type, as well as nil error.
+// If v is not a pointer or not a supported pointer, it returns
+// zero-value reflect value and reflect type as well as an error.
+//
+// MIGRATE: utils.CanStruct
+// CanStruct returns true if reflect value represents a nested struct,
+// else returns false.
 func New(dest interface{}, parents ...*StructValue) (*StructValue, error) {
-	// Start with zero-value of StructValue.
-	s := &StructValue{}
-	// Load parent StructValue, if any.
-	if len(parents) > 0 {
-		s.Parent = parents[0]
-	}
-	// Invalid nil argument
 	if dest == nil {
 		err := errors.Errorf(
-			"invalid concrete value; want: '%s' or '%s' or '%s', got: 'nil'",
+			"invalid concrete value; want: %q or %q or %q, got: <nil>",
 			reflect.Struct,
 			reflect.Ptr,
 			reflect.Slice,
 		)
 		return nil, err
 	}
-	// Find the struct or structs in the interface dest ...
 	v := reflect.ValueOf(dest)
-	t := reflect.TypeOf(dest)
-	s.findStruct(v, t)
-	//... or return failure.
-	if err := s.Err(); err != nil {
-		return nil, err
+	s := IndirectStruct(v)
+	if len(parents) > 0 {
+		s.Parent = parents[0]
 	}
-	return s, nil
+	return s, s.Err()
+}
+
+// IndirectStruct finds the struct or structs in the interface dest.
+//
+//   Types   Description                     Example
+//
+//   T       a struct                        New(t)
+//   *T      a pointer to a struct           New(&t)
+//   []T     a slice of struct               New([]T{t})
+//   *[]T    a pointer to a slice of struct  New(&[]T{t})
+//   []*T    a slice of pointers to struct   New([]*T{&t})
+//
+// Similar to utils.CanStruct(v)
+func IndirectStruct(v reflect.Value) *StructValue {
+	s := &StructValue{kinds: make([]reflect.Kind, 0)}
+	t := v.Type()
+	i := 0
+	for {
+		i++
+		s.kinds = append(s.kinds, t.Kind())
+		if t.Kind() == reflect.Struct {
+			s.value = v
+			break
+		}
+		switch t.Kind() {
+		case reflect.Ptr:
+			v, t = v.Elem(), t.Elem()
+		case reflect.Slice, reflect.Array:
+			s.rows = v
+			t = t.Elem()
+			if v.Len() > 0 {
+				v = v.Index(0)
+			} else {
+				v = reflect.New(t).Elem()
+			}
+		case reflect.Map, reflect.Chan, reflect.Func:
+			s.Error = errors.Errorf("%q is an unsupported pointer to a struct", t.Kind())
+		default:
+			s.Error = errors.Errorf("%q is not a pointer", t.Kind())
+		}
+		if s.Error != nil {
+			break
+		}
+		if i > 3 {
+			s.Error = errors.Errorf("%q not found after %d indirect lookups; %q kinds so far", reflect.Struct, i, utils.Kinds(s.kinds...))
+			break
+		}
+	}
+	return s
 }
 
 /*   I m p l e m e n t a t i o n   */
@@ -347,10 +432,10 @@ func (s *StructValue) Name() string {
 	return s.value.Type().Name()
 }
 
-// Namespace returns the same as the Name method, unless StructValue is a nested struct.
+// FullName returns the same as the Name method, unless StructValue is a nested struct.
 // When dealing with a nested struct, parent struct names are looked up and concatenated
 // to the response recursively all the way to the top level struct.
-func (s *StructValue) Namespace() string {
+func (s *StructValue) FullName() string {
 	n := ""
 	p := s.Parent
 	for {
@@ -397,24 +482,23 @@ func (s *StructValue) Values() (values []reflect.Value) {
 			if f.CanStruct() {
 				values = append(values, f.Struct().Values()...)
 			} else {
-				values = append(values, f.Value())
+				v := reflect.Indirect(f.value) // f.Value()
+				values = append(values, v)
 			}
 		}
 	}
 	return values
 }
 
-// PtrValues returns the values of the struct as a slice of interfaces recursively.
-// Unexported struct fields will be neglected.
-func (s *StructValue) PtrValues() (values []reflect.Value) {
+// IndirectValues returns the values of the struct as a slice of reflect Values recursively.
+func (s *StructValue) IndirectValues() (values []reflect.Value) {
 	for _, f := range s.Fields() {
-		if f.IsExported() {
-			if f.CanStruct() {
-				values = append(values, f.Struct().PtrValues()...)
-			} else {
-				values = append(values, f.PtrValue())
-			}
+		if f.CanStruct() {
+			values = append(values, f.Struct().IndirectValues()...)
+			continue
 		}
+		v := reflect.Indirect(f.value)
+		values = append(values, v)
 	}
 	return values
 }
@@ -564,33 +648,6 @@ func (s *StructValue) Contains(dest interface{}) int {
 	return s.contains(v)
 }
 
-// // Contains reports whether value is within interface dest.
-// func (s *StructValue) Contains(dest, value interface{}) bool {
-// 	s, err := New(dest)
-// 	if err == nil {
-// 		v := reflect.ValueOf(value)
-// 		if i := s.contains(v); i != OutOfRange {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
-// // FieldNameByValue returns the field's name of the first instance of the
-// // value in dest.
-// func (s *StructValue) FieldNameByValue(dest, value interface{}) string {
-// 	s, err := New(dest)
-// 	if err == nil {
-// 		v := reflect.ValueOf(value)
-// 		if i := s.contains(v); i != OutOfRange {
-// 			if f := s.Field(i); f != nil {
-// 				return f.Name()
-// 			}
-// 		}
-// 	}
-// 	return ""
-// }
-
 // HasField returns true if struct dest has a field called the same as
 // argument name.
 func (s *StructValue) HasField(dest interface{}, arg interface{}) (bool, error) {
@@ -605,18 +662,6 @@ func (s *StructValue) HasField(dest interface{}, arg interface{}) (bool, error) 
 	return false, nil
 }
 
-// // Index returns the index of the first instance of the value in dest.
-// func (s *StructValue) Index(dest, value interface{}) int {
-// 	s, err := New(dest)
-// 	if err == nil {
-// 		v := reflect.ValueOf(value)
-// 		if i := s.contains(v); i != OutOfRange {
-// 			return i
-// 		}
-// 	}
-// 	return OutOfRange
-// }
-
 // Import loops through destination fields of struct s and set their values to the
 // corresponding fields from c. Usually, s is a trim-down version of c.
 // Unsettable struct fields will be neglected.
@@ -628,34 +673,8 @@ func (s *StructValue) Import(c *StructValue) error {
 			if err := c.Err(); err != nil {
 				return err
 			}
-			// format := "%s.Field: %s, Embedded: %t, Exported: %t, Settable: %t\n%+v\n"
-			// fmt.Printf(format,
-			// 	c.Name(),
-			// 	f.Name(),
-			// 	f.IsEmbedded(),
-			// 	f.IsExported(),
-			// 	f.CanSet(),
-			// 	f.field)
-			//
-			// Organization.Name: GormModel, Embedded: true, Exported: true, Settable: true
-			// {Name:GormModel PkgPath: Type:models.GormModel Tag: Offset:0 Index:[0] Anonymous:true}
-			//
-			// fmt.Printf(format,
-			// 	s.Name(),
-			// 	field.Name(),
-			// 	field.IsEmbedded(),
-			// 	field.IsExported(),
-			// 	field.CanSet(),
-			// 	field.field)
-			//
-			// CreateOrganizationRes.Name: ID, Embedded: false, Exported: true, Settable: true
-			// {Name:ID PkgPath: Type:uint Tag:json:"id" example:"12" Offset:0 Index:[0] Anonymous:false}
-			//
-			x := f.Value()
+			x := f.value // f.Value()
 			v.Set(x)
-			//
-			// panic: reflect.Set: value of type models.GormModel is not assignable to type uint
-			//
 		}
 	}
 	return nil
@@ -672,10 +691,11 @@ func (s *StructValue) Forward(c *StructValue) error {
 			if err := c.Err(); err != nil {
 				return err
 			}
-			if !f.IsZero() {
-				x := f.Value()
-				v.Set(x)
+			if f.IsZero() {
+				continue
 			}
+			x := f.value // f.Value()
+			v.Set(x)
 		}
 	}
 	return nil
@@ -702,99 +722,91 @@ func (s *StructValue) MapFunc(handler func(reflect.Value) error) (*StructValue, 
 // Diff returns the differences in field values between two StructValue.
 func (s *StructValue) Diff(c *StructValue) (map[string]interface{}, error) {
 	diffs := make(map[string]interface{})
-	for _, f := range s.Fields() {
-		if f.IsExported() {
-			cField := c.Field(f.Name())
-			err := c.Err()
-			if err != nil {
+	for _, field := range s.Fields() {
+		if field.IsExported() {
+			f := c.Field(field.Name())
+			if err := c.Err(); err != nil {
 				return nil, err
 			}
-			if !f.Equal(cField) {
-				diffs[f.JSONName()], err = f.Get()
-				if err != nil {
-					return diffs, err
-				}
+			if !field.Equal(f) {
+				key := field.NameJson()
+				val := field.Get()
+				diffs[key] = val
 			}
 		}
 	}
 	return diffs, nil
 }
 
+// Defaults initializes struct from inline default struct tags.
+// Unsettable and zero-value fields will be neglected.
+func (s *StructValue) Defaults() error {
+	for _, f := range s.Fields() {
+		if f.CanSet() && f.IsZero() {
+			if d := f.Default(); d != "" {
+				v := reflect.Indirect(f.value)
+				switch {
+				case utils.CanStruct(v):
+					err := f.Struct().Defaults() // Recursivity
+					if err != nil {
+						return err
+					}
+				case utils.CanBool(v):
+					x, err := strconv.ParseBool(d)
+					if err != nil {
+						return errors.Wrapf(err, "failed to parse %v as default value for bool, got error: %v", d, err)
+					}
+					v.SetBool(x)
+				case utils.CanInt(v):
+					x, err := strconv.ParseInt(d, 0, 64)
+					if err != nil {
+						return errors.Wrapf(err, "failed to parse %v as default value for int, got error: %v", d, err)
+					}
+					v.SetInt(x)
+				case utils.CanUint(v):
+					x, err := strconv.ParseUint(d, 0, 64)
+					if err != nil {
+						return errors.Wrapf(err, "failed to parse %v as default value for uint, got error: %v", d, err)
+					}
+					v.SetUint(x)
+				case utils.CanFloat(v):
+					x, err := strconv.ParseFloat(d, 64)
+					if err != nil {
+						return errors.Wrapf(err, "failed to parse %v as default value for float, got error: %v", d, err)
+					}
+					v.SetFloat(x)
+				case utils.CanDuration(v):
+					x, err := time.ParseDuration(d)
+					if err != nil {
+						return errors.Wrapf(err, "failed to parse %v as default value for duration, got error: %v", d, err)
+					}
+					f.SetDuration(x)
+				case utils.CanTime(v):
+					t, err := utils.StringToTime(d)
+					if err != nil {
+						return errors.Wrapf(err, "failed to parse %v as default value for time, got error: %v", d, err)
+					}
+					x := reflect.ValueOf(t)
+					v.Set(x)
+				case utils.CanString(v):
+					d = strings.Trim(d, "'")
+					d = strings.Trim(d, "\"")
+					v.SetString(d)
+				case utils.CanBytes(v):
+					x := []byte(d)
+					v.SetBytes(x)
+				case utils.CanSlice(v):
+					return errors.New("slice default struct tag value not supported")
+				case utils.CanMap(v):
+					return errors.New("map default struct tag value not supported")
+				}
+			}
+		}
+	}
+	return nil
+}
+
 /*   U n e x p o r t e d   */
-
-// findStruct finds where the struct is inside the reflect value and type.
-// By being chainable, findStruct uses withStruct to finalize successful completion
-// and exit the switch case below, all in a one-liner, otherwise it returns the
-// StructValue explictly at the end.
-// See the Support paragraph in the documentation for more details.
-func (s *StructValue) findStruct(v reflect.Value, t reflect.Type) *StructValue {
-	switch t.Kind() {
-	case reflect.Struct:
-		// Type interface
-		//
-		// // PtrTo returns the pointer type with element t.
-		// // For example, if t represents type Foo, PtrTo(t) represents *Foo.
-		// func PtrTo(t Type) Type {
-		// 	return t.(*rtype).ptrTo()
-		// }
-		return s.withStruct(v, t)
-	case reflect.Ptr:
-		v, t = s.getElem(v, t)
-		switch t.Kind() {
-		case reflect.Struct:
-			return s.withStruct(v, t)
-		case reflect.Slice:
-			v, t = s.getElem(v, t)
-			if t.Kind() == reflect.Struct {
-				return s.withStruct(v, t)
-			}
-		}
-	case reflect.Slice:
-		v, t = s.getElem(v, t)
-		switch t.Kind() {
-		case reflect.Struct:
-			return s.withStruct(v, t)
-		case reflect.Ptr:
-			v, t = s.getElem(v, t)
-			if t.Kind() == reflect.Struct {
-				return s.withStruct(v, t)
-			}
-		}
-	}
-	v, t = s.getElem(v, t)
-	return s
-}
-
-// withStruct returns StructValue object after setting reflect.Value of struct found.
-// By being chainable, withStruct can finalize StructValue and return it at the same time.
-func (s *StructValue) withStruct(v reflect.Value, t reflect.Type) *StructValue {
-	s.appendKind(t)
-	s.value = v
-	return s
-}
-
-// getElem returns the element or the first element of the reflection pointer value and type.
-// It saves an errors inside StructValue if the type's Kind is not Array, Ptr, or Slice.
-func (s *StructValue) getElem(v reflect.Value, t reflect.Type) (rv reflect.Value, rt reflect.Type) {
-	s.appendKind(t)
-	if t.Kind() == reflect.Slice {
-		s.rows = v
-	}
-	rv, rt, err := utils.StructValueElem(v, t)
-	if err != nil {
-		s.wrapErr(err)
-	}
-	return rv, rt
-}
-
-// appendKind appends reflect type t to the slice of kinds in StructValue.
-// The first, it initialized kinds as a the slice of kinds.
-func (s *StructValue) appendKind(t reflect.Type) {
-	if s.kinds == nil {
-		s.kinds = make([]reflect.Kind, 0)
-	}
-	s.kinds = append(s.kinds, t.Kind())
-}
 
 // getFields loads and saves all the struct fields.
 // This method is not recursive, which means that nested structs must be dealt with explicitly.

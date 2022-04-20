@@ -27,7 +27,7 @@ func TestNewStruct(t *testing.T) {
 	assert.Equal(t, 3, s.NumField())
 	assert.Equal(t, false, s.HasNested())
 	assert.Equal(t, "T1", s.Name())
-	assert.Equal(t, "T1", s.Namespace())
+	assert.Equal(t, "T1", s.FullName())
 	assert.Equal(t, false, s.IsNested())
 	assert.Equal(t, false, s.IsZero())
 	assert.Equal(t, true, s.HasZero())
@@ -39,7 +39,7 @@ func TestNewStruct(t *testing.T) {
 func TestNewNil(t *testing.T) {
 	s, err := New(nil)
 	assert.NotEqual(t, nil, err)
-	assert.Equal(t, "invalid concrete value; want: 'struct' or 'ptr' or 'slice', got: 'nil'", err.Error())
+	assert.Equal(t, "invalid concrete value; want: \"struct\" or \"ptr\" or \"slice\", got: <nil>", err.Error())
 	if s != nil {
 		t.Error("s is not nil")
 	}
@@ -61,7 +61,7 @@ func TestNewPtrToStruct(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, utils.Kinds(reflect.Ptr, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
-	assert.Equal(t, "T1", s.Namespace())
+	assert.Equal(t, "T1", s.FullName())
 	assert.Equal(t, false, s.IsNested())
 	assert.Equal(t, false, s.IsZero())
 	assert.Equal(t, true, s.HasZero())
@@ -87,7 +87,7 @@ func TestNewPtrToSliceOfStruct(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, utils.Kinds(reflect.Ptr, reflect.Slice, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
-	assert.Equal(t, "T1", s.Namespace())
+	assert.Equal(t, "T1", s.FullName())
 	assert.Equal(t, false, s.IsNested())
 	assert.Equal(t, false, s.IsZero())
 	assert.Equal(t, true, s.HasZero())
@@ -113,7 +113,7 @@ func TestNewSliceOfStruct(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, utils.Kinds(reflect.Slice, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
-	assert.Equal(t, "T1", s.Namespace())
+	assert.Equal(t, "T1", s.FullName())
 	assert.Equal(t, false, s.IsNested())
 	assert.Equal(t, false, s.IsZero())
 	assert.Equal(t, true, s.HasZero())
@@ -139,7 +139,7 @@ func TestNewSliceOfPtrToStruct(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, utils.Kinds(reflect.Slice, reflect.Ptr, reflect.Struct), s.Path())
 	assert.Equal(t, "T1", s.Name())
-	assert.Equal(t, "T1", s.Namespace())
+	assert.Equal(t, "T1", s.FullName())
 	assert.Equal(t, false, s.IsNested())
 	assert.Equal(t, false, s.IsZero())
 	assert.Equal(t, true, s.HasZero())
@@ -212,12 +212,9 @@ func TestNewUnsupported(t *testing.T) {
 		},
 	}
 
-	s, err := New(&m1)
+	_, err := New(&m1)
 	assert.NotEqual(t, nil, err)
-	assert.Equal(t, "'map' is an unsupported pointer to a struct", err.Error())
-	if s != nil {
-		t.Error("s is not nil")
-	}
+	assert.Equal(t, "\"map\" is an unsupported pointer to a struct", err.Error())
 }
 
 func TestNestedStruct(t *testing.T) {
@@ -264,9 +261,9 @@ func TestNestedStruct(t *testing.T) {
 	s2 := s3.FindStruct("T2")
 	s1 := s3.FindStruct("T1")
 	assert.Equal(t, nil, err)
-	assert.Equal(t, "T3", s3.Namespace())
-	assert.Equal(t, "T3.T2", s2.Namespace())
-	assert.Equal(t, "T3.T2.T1", s1.Namespace())
+	assert.Equal(t, "T3", s3.FullName())
+	assert.Equal(t, "T3.T2", s2.FullName())
+	assert.Equal(t, "T3.T2.T1", s1.FullName())
 	// T3
 	assert.Equal(t, false, s3.IsZero())
 	assert.Equal(t, true, s3.HasZero())

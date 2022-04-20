@@ -74,7 +74,7 @@ func ExampleNew() {
 	//  	"Bool": true,
 	//  	"Int": 5
 	//  }.
-	// Set[Error]: wrong kind of value for field T.Bool. got: 'int' want: 'bool'.
+	// Set[Error]: wrong kind of value for field T.Bool. got: "int" want: "bool".
 	// Value of String    : Roninzo.
 	// Value of Uint      : 654321.
 	// Value of Int       : 6.
@@ -91,83 +91,6 @@ func ExampleNew() {
 	// t.Int              : 6.
 }
 
-func ExampleNew_pointerFields() {
-	type Server struct {
-		Name    *string `json:"name"`
-		ID      *uint   `json:"id"`
-		Enabled *bool   `json:"enabled"`
-		Count   *int32  `json:"count"`
-	}
-
-	server := Server{
-		Name:    pointers.String("Roninzo"),
-		ID:      pointers.Uint(uint(123456)),
-		Enabled: pointers.Bool(true),
-		Count:   pointers.Int32(int32(5)),
-	}
-
-	s, err := structs.New(&server)
-	if err != nil {
-		fmt.Printf("Error          : %v\n", err)
-	}
-
-	fmt.Printf("Name           : %v\n", s.Name())
-	fmt.Printf("Value of ID    : %v\n", s.Field("ID").PtrValue())
-	fmt.Printf("Value of 0     : %v\n", s.Field(0).PtrValue())
-	fmt.Printf("Value of Count : %v\n", s.Field("Count").PtrValue())
-	fmt.Printf("Sprint: %s.\n", s.Sprint())
-
-	err = s.Field("ID").Set(pointers.Uint(uint(654321)))
-	if err != nil {
-		fmt.Printf("Error          : %v\n", err)
-	}
-
-	err = s.Field("Count").Set(pointers.Int32(int32(6)))
-	if err != nil {
-		fmt.Printf("Error          : %v\n", err)
-	}
-
-	err = s.Field("Enabled").Set(pointers.Int32(int32(6))) // not compatible with bool
-	if err != nil {
-		fmt.Printf("Error          : %v\n", err)
-	}
-
-	fmt.Printf("Value of Name  : %v\n", s.Field("Name").PtrValue())
-	fmt.Printf("Value of ID    : %v\n", s.Field("ID").PtrValue())
-	fmt.Printf("Value of Count : %v\n", s.Field("Count").PtrValue())
-	fmt.Printf("Sprint: %s.\n", s.Sprint())
-	fmt.Printf("\nVerification   :\n")
-	fmt.Printf("server.Name    : %s\n", *server.Name)
-	fmt.Printf("server.ID      : %d\n", *server.ID)
-	fmt.Printf("server.Count   : %d\n", *server.Count)
-
-	// Output:
-	// Name           : Server
-	// Value of ID    : 123456
-	// Value of 0     : Roninzo
-	// Value of Count : 5
-	// Sprint: {
-	//  	"name": "Roninzo",
-	//  	"id": 123456,
-	//  	"enabled": true,
-	//  	"count": 5
-	//  }.
-	// Error          : wrong kind of value for field Server.Enabled. got: '*int32' want: '*bool'
-	// Value of Name  : Roninzo
-	// Value of ID    : 654321
-	// Value of Count : 6
-	// Sprint: {
-	//  	"name": "Roninzo",
-	//  	"id": 654321,
-	//  	"enabled": true,
-	//  	"count": 6
-	//  }.
-	//
-	// Verification   :
-	// server.Name    : Roninzo
-	// server.ID      : 654321
-	// server.Count   : 6
-}
 func ExampleStructValue_IsValid() {
 	type Server struct {
 		Name    string
@@ -198,7 +121,7 @@ func ExampleStructValue_IsValid() {
 	}
 
 	// Output:
-	// Error: invalid concrete value; want: 'struct' or 'ptr' or 'slice', got: 'nil'
+	// Error: invalid concrete value; want: "struct" or "ptr" or "slice", got: <nil>
 	// IsValid: true
 }
 
@@ -286,7 +209,7 @@ func ExampleStructValue_Kind() {
 	fmt.Printf("Kind: %v\n", s.Kind())
 
 	// Output:
-	// Error: invalid concrete value; want: 'struct' or 'ptr' or 'slice', got: 'nil'
+	// Error: invalid concrete value; want: "struct" or "ptr" or "slice", got: <nil>
 	// Kind: struct
 }
 
@@ -363,7 +286,7 @@ func ExampleStructValue_Values() {
 	// Values[5]: Apache
 }
 
-func ExampleStructValue_PtrValues() {
+func ExampleStructValue_IndirectValues() {
 	type Program struct {
 		Name *string `json:"name,omitempty"`
 	}
@@ -398,20 +321,21 @@ func ExampleStructValue_PtrValues() {
 	}
 
 	// json struct tag omits Password and Count
-	for i, value := range s.PtrValues() {
-		fmt.Printf("PtrValues[%d]: %v.\n", i, value)
+	for i, value := range s.IndirectValues() {
+		fmt.Printf("IndirectValues[%d]: %v.\n", i, value)
 	}
 
 	// Output:
-	// PtrValues[0]: Roninzo.
-	// PtrValues[1]: 123456.
-	// PtrValues[2]: true.
-	// PtrValues[3]: 0.
-	// PtrValues[4]: Apache.
-	// PtrValues[5]: abcdefg.
+	// IndirectValues[0]: Roninzo.
+	// IndirectValues[1]: 123456.
+	// IndirectValues[2]: true.
+	// IndirectValues[3]: 0.
+	// IndirectValues[4]: Apache.
+	// IndirectValues[5]: abcdefg.
+	// IndirectValues[6]: true.
 }
 
-func ExampleStructValue_Dump() {
+func ExampleStructValue_Sprint() {
 	type Program struct {
 		Name string `json:"name,omitempty"`
 	}
@@ -872,12 +796,12 @@ func ExampleStructValue_Namespace() {
 	}
 	p := s.FindStruct("Program")
 
-	fmt.Printf("Namespace: %v\n", s.Namespace())
-	fmt.Printf("Namespace: %v\n", p.Namespace())
+	fmt.Printf("FullName: %v\n", s.FullName())
+	fmt.Printf("FullName: %v\n", p.FullName())
 
 	// Output:
-	// Namespace: Server
-	// Namespace: Server.Program
+	// FullName: Server
+	// FullName: Server.Program
 }
 
 func ExampleStructValue_Path() {
@@ -1074,7 +998,7 @@ func ExampleStructValue_Diff() {
 
 	keys := make([]string, len(diffs))
 	i := 0
-	for key, _ := range diffs {
+	for key := range diffs {
 		keys[i] = key
 		i++
 	}
@@ -1104,7 +1028,7 @@ func ExampleStructValue_Diff() {
 	// Diff[pointer_bool]: false.
 	// Diff[pointer_complex]: json: unsupported type: complex128.
 	// Diff[pointer_duration]: 30000000000.
-	// Diff[pointer_error]: {}.
+	// Diff[pointer_error]: "not compliant".
 	// Diff[pointer_float]: 7622.5.
 	// Diff[pointer_int]: 3.
 	// Diff[pointer_nested_struct]: {"uint":443211,"string":"Microsoft IIS"}.
@@ -1130,6 +1054,84 @@ func ExampleStructValue_Diff() {
 }
 
 /*   S t r u c t F i e l d   */
+
+func ExampleStructField_Indirect() {
+	type Server struct {
+		Name    *string `json:"name"`
+		ID      *uint   `json:"id"`
+		Enabled *bool   `json:"enabled"`
+		Count   *int32  `json:"count"`
+	}
+
+	server := Server{
+		Name:    pointers.String("Roninzo"),
+		ID:      pointers.Uint(uint(123456)),
+		Enabled: pointers.Bool(true),
+		Count:   pointers.Int32(int32(5)),
+	}
+
+	s, err := structs.New(&server)
+	if err != nil {
+		fmt.Printf("Error          : %v\n", err)
+	}
+
+	fmt.Printf("Name           : %v\n", s.Name())
+	fmt.Printf("Value of ID    : %v\n", s.Field("ID").Indirect())
+	fmt.Printf("Value of 0     : %v\n", s.Field(0).Indirect())
+	fmt.Printf("Value of Count : %v\n", s.Field("Count").Indirect())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
+
+	err = s.Field("ID").Set(pointers.Uint(uint(654321)))
+	if err != nil {
+		fmt.Printf("Error          : %v\n", err)
+	}
+
+	err = s.Field("Count").Set(pointers.Int32(int32(6)))
+	if err != nil {
+		fmt.Printf("Error          : %v\n", err)
+	}
+
+	err = s.Field("Enabled").Set(pointers.Int32(int32(6))) // not compatible with bool
+	if err != nil {
+		fmt.Printf("Error          : %v\n", err)
+	}
+
+	fmt.Printf("Value of Name  : %v\n", s.Field("Name").Indirect())
+	fmt.Printf("Value of ID    : %v\n", s.Field("ID").Indirect())
+	fmt.Printf("Value of Count : %v\n", s.Field("Count").Indirect())
+	fmt.Printf("Sprint: %s.\n", s.Sprint())
+	fmt.Printf("\nVerification   :\n")
+	fmt.Printf("server.Name    : %s\n", *server.Name)
+	fmt.Printf("server.ID      : %d\n", *server.ID)
+	fmt.Printf("server.Count   : %d\n", *server.Count)
+
+	// Output:
+	// Name           : Server
+	// Value of ID    : 123456
+	// Value of 0     : Roninzo
+	// Value of Count : 5
+	// Sprint: {
+	//  	"name": "Roninzo",
+	//  	"id": 123456,
+	//  	"enabled": true,
+	//  	"count": 5
+	//  }.
+	// Error          : wrong kind of value for field Server.Enabled. got: "*int32" want: "*bool"
+	// Value of Name  : Roninzo
+	// Value of ID    : 654321
+	// Value of Count : 6
+	// Sprint: {
+	//  	"name": "Roninzo",
+	//  	"id": 654321,
+	//  	"enabled": true,
+	//  	"count": 6
+	//  }.
+	//
+	// Verification   :
+	// server.Name    : Roninzo
+	// server.ID      : 654321
+	// server.Count   : 6
+}
 
 func ExampleStructField_IsValid() {
 	type Server struct {
@@ -1236,12 +1238,12 @@ func ExampleStructField_Namespace() {
 	f1 := s.Field(0)
 	f2 := s.FindStruct("Program").Field(0)
 
-	fmt.Printf("Namespace: %v\n", f1.Namespace())
-	fmt.Printf("Namespace: %v\n", f2.Namespace())
+	fmt.Printf("FullName: %v\n", f1.FullName())
+	fmt.Printf("FullName: %v\n", f2.FullName())
 
 	// Output:
-	// Namespace: Server.Name
-	// Namespace: Server.Program.Name
+	// FullName: Server.Name
+	// FullName: Server.Program.Name
 }
 
 func ExampleStructField_Value() {
@@ -1418,11 +1420,18 @@ func ExampleStructField_CanSet() {
 		fmt.Printf("Error: %v\n", err)
 	}
 
-	f1 := s.Field(0)
-	f2 := s.FindStruct("Program").Field("Name")
+	f := s.Field(0)
 
-	fmt.Printf("CanSet: %v\n", f1.CanSet())
-	fmt.Printf("CanSet: %v\n", f2.CanSet())
+	fmt.Printf("CanSet: %v\n", f.CanSet())
+
+	s, err = structs.New(server)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
+
+	f = s.Field(0)
+
+	fmt.Printf("CanSet: %v\n", f.CanSet())
 
 	// Output:
 	// CanSet: true
@@ -1592,7 +1601,7 @@ func ExampleStructField_IsHidden() {
 	// Output:
 	// IsHidden: false
 	// IsHidden: true
-	// IsHidden: true
+	// IsHidden: false
 }
 
 func ExampleStructField_Zero() {
@@ -2553,19 +2562,19 @@ func ExampleStructField_Get() {
 		fmt.Printf("Error: %v.\n", err)
 	}
 
-	v1, err1 := f1.Get()
-	v2, err2 := f2.Get()
-	v3, err3 := f3.Get()
-	v4, err4 := f4.Get()
+	v1 := f1.Get()
+	v2 := f2.Get()
+	v3 := f3.Get()
+	v4 := f4.Get()
 
 	fmt.Printf("Value %-11s: %v.\n", f1.Name(), f1.Value())
 	fmt.Printf("Value %-11s: %v.\n", f2.Name(), f2.Value())
 	fmt.Printf("Value %-11s: %v.\n", f3.Name(), f3.Value())
 	fmt.Printf("Value %-11s: %v.\n", f4.Name(), f4.Value())
-	fmt.Printf("Get   %-11s: %-11v, err: %v.\n", f1.Name(), v1, err1)
-	fmt.Printf("Get   %-11s: %-11v, err: %v.\n", f2.Name(), v2, err2)
-	fmt.Printf("Get   %-11s: %-11v, err: %v.\n", f3.Name(), v3, err3)
-	fmt.Printf("Get   %-11s: %-11v, err: %v.\n", f4.Name(), v4, err4)
+	fmt.Printf("Get   %-11s: %v.\n", f1.Name(), v1)
+	fmt.Printf("Get   %-11s: %v.\n", f2.Name(), v2)
+	fmt.Printf("Get   %-11s: %v.\n", f3.Name(), v3)
+	fmt.Printf("Get   %-11s: %v.\n", f4.Name(), v4)
 
 	// Output:
 	// Error: invalid field name Undeclared.
@@ -2573,10 +2582,10 @@ func ExampleStructField_Get() {
 	// Value Count      : 0.
 	// Value unexported : false.
 	// Value Password   : abcdefg.
-	// Get   Name       : Roninzo    , err: <nil>.
-	// Get   Count      : 0          , err: <nil>.
-	// Get   unexported : <nil>      , err: could not get value of field Server.unexported: struct field is not exported.
-	// Get   Password   : abcdefg    , err: <nil>.
+	// Get   Name       : Roninzo.
+	// Get   Count      : 0.
+	// Get   unexported : <nil>.
+	// Get   Password   : abcdefg.
 }
 
 func ExampleStructField_SetZero() {

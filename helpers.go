@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 )
 
 /*   F u n c t i o n s   */
+
+// TO REVISIT
 
 // // Struct returns the StructValue object or panics (returns nil).
 // func Struct(v reflect.Value) *StructValue {
@@ -95,77 +98,91 @@ func Fields(dest interface{}) (StructFields, error) {
 //
 // Resources:
 // https://stackoverflow.com/questions/50269322/how-to-copy-struct-and-dereference-all-pointers
+//
+// // ctx will be the context error returned
+// // by this func if anything goes wrong
+// ctx := "could not copy data between two structs"
+// //
+// // Both interfaces must be valid structs for this to work
+// s1, err := New(src)
+// if err != nil {
+// 	return errors.Wrap(err, ctx)
+// }
+// s2, err := New(dest)
+// if err != nil {
+// 	return errors.Wrap(err, ctx)
+// }
+// //
+// // ctx content can now now be improved
+// ctx = fmt.Sprintf("could not copy data between two %q structs", s1.Name())
+// //
+// // StructValue names must be the same
+// if s1.Name() != s2.Name() {
+// 	return errors.Wrap(errors.Errorf("target struct name is invalid: want: %q, got: %q", s1.Name(), s2.Name()), ctx)
+// }
+// //
+// // Target struct must be editable
+// if !s2.CanSet() {
+// 	return errors.Wrap(errors.Errorf("cannot edit struct %s", s2.Name()), ctx)
+// }
+// //
+// // Both interfaces must be singulars of struct, not multiples
+// if s1.Multiple() {
+// 	return errors.Wrap(errors.Errorf("source is a slice of struct %s", s1.Name()), ctx)
+// }
+// if s2.Multiple() {
+// 	return errors.Wrap(errors.Errorf("target is a slice of struct %s", s2.Name()), ctx)
+// }
+// return s2.Import(s1)
 func Copy(dest, src interface{}) error {
-	// ctx will be the context error returned
-	// by this func if anything goes wrong
-	ctx := "could not copy data between two structs"
-	//
-	// Both interfaces must be valid structs for this to work
-	s1, err := New(src)
-	if err != nil {
-		return errors.Wrap(err, ctx)
-	}
-	s2, err := New(dest)
-	if err != nil {
-		return errors.Wrap(err, ctx)
-	}
-	//
-	// ctx content can now now be improved
-	ctx = fmt.Sprintf("could not copy data between two '%s' structs", s1.Name())
-	//
-	// StructValue names must be the same
-	if s1.Name() != s2.Name() {
-		return errors.Wrap(errors.Errorf("target struct name is invalid: want: '%s', got: '%s'", s1.Name(), s2.Name()), ctx)
-	}
-	//
-	// Target struct must be editable
-	if !s2.CanSet() {
-		return errors.Wrap(errors.Errorf("cannot edit struct %s", s2.Name()), ctx)
-	}
-	//
-	// Both interfaces must be singulars of struct, not multiples
-	if s1.Multiple() {
-		return errors.Wrap(errors.Errorf("source is a slice of struct %s", s1.Name()), ctx)
-	}
-	if s2.Multiple() {
-		return errors.Wrap(errors.Errorf("target is a slice of struct %s", s2.Name()), ctx)
-	}
-	return s2.Import(s1)
+	return copier.CopyWithOption(dest, src, copier.Option{DeepCopy: true})
 }
 
 // Clone returns a copy from a struct out of nothing.
+//
+// // ctx will be the context error returned
+// // by this func if anything goes wrong
+// ctx := "could not clone struct"
+// //
+// // Source interface must be valid struct for this to work
+// // Target dest will be the recipient for a copy of src
+// s1, err := New(src)
+// if err != nil {
+// 	return nil, errors.Wrap(err, ctx)
+// }
+// t := s1.Type()
+// dest := reflect.New(t).Interface()
+// s2, err := New(dest)
+// if err != nil {
+// 	return nil, errors.Wrap(err, ctx)
+// }
+// //
+// // ctx content can now now be improved
+// ctx = fmt.Sprintf("could not clone struct %q", s1.Name())
+// //
+// // Target struct must be editable
+// if !s2.CanSet() {
+// 	return nil, errors.Wrap(errors.Errorf("cannot edit struct %s", s2.Name()), ctx)
+// }
+// //
+// // Target must be singular of struct, not multiple
+// if s2.Multiple() {
+// 	return nil, errors.Wrap(errors.Errorf("source is a slice of struct %s", s2.Name()), ctx)
+// }
+// err = s2.Import(s1)
+// return dest, err
 func Clone(src interface{}) (interface{}, error) {
-	// ctx will be the context error returned
-	// by this func if anything goes wrong
-	ctx := "could not clone struct"
-	//
-	// Source interface must be valid struct for this to work
-	// Target dest will be the recipient for a copy of src
 	s1, err := New(src)
 	if err != nil {
-		return nil, errors.Wrap(err, ctx)
+		return nil, errors.Wrap(err, "could not clone struct")
 	}
 	t := s1.Type()
 	dest := reflect.New(t).Interface()
-	s2, err := New(dest)
+	err = copier.CopyWithOption(dest, src, copier.Option{DeepCopy: true})
 	if err != nil {
-		return nil, errors.Wrap(err, ctx)
+		return nil, errors.Wrap(err, "could not clone struct")
 	}
-	//
-	// ctx content can now now be improved
-	ctx = fmt.Sprintf("could not clone struct '%s'", s1.Name())
-	//
-	// Target struct must be editable
-	if !s2.CanSet() {
-		return nil, errors.Wrap(errors.Errorf("cannot edit struct %s", s2.Name()), ctx)
-	}
-	//
-	// Target must be singular of struct, not multiple
-	if s2.Multiple() {
-		return nil, errors.Wrap(errors.Errorf("source is a slice of struct %s", s2.Name()), ctx)
-	}
-	err = s2.Import(s1)
-	return dest, err
+	return dest, nil
 }
 
 // Transpose loops through target fields and set value of its related
@@ -186,7 +203,7 @@ func Transpose(dest, src interface{}) error {
 	}
 	//
 	// ctx content can now now be improved
-	ctx = fmt.Sprintf("could not transpose data between '%s' and '%s' structs", s1.Name(), s2.Name())
+	ctx = fmt.Sprintf("could not transpose data between %q and %q structs", s1.Name(), s2.Name())
 	//
 	// StructValue names must be diffenent (otherwise, just use Copy)
 	if s1.Name() == s2.Name() {
@@ -225,11 +242,11 @@ func Forward(dest, src interface{}) error {
 	}
 	//
 	// ctx content can now now be improved
-	ctx = fmt.Sprintf("could not copy source non-zero values to target struct '%s'", s2.Name())
+	ctx = fmt.Sprintf("could not copy source non-zero values to target struct %q", s2.Name())
 	//
 	// StructValue names must be the same
 	if s1.Name() != s2.Name() {
-		return errors.Wrap(errors.Errorf("target struct name is invalid: want: '%s', got: '%s'", s1.Name(), s2.Name()), ctx)
+		return errors.Wrap(errors.Errorf("target struct name is invalid: want: %q, got: %q", s1.Name(), s2.Name()), ctx)
 	}
 	//
 	// Target struct must be editable
@@ -270,11 +287,11 @@ func Diff(dest, src interface{}) (map[string]interface{}, error) {
 	}
 	//
 	// ctx content can now now be improved
-	ctx = fmt.Sprintf("could not compare values to target struct '%s'", s2.Name())
+	ctx = fmt.Sprintf("could not compare values to target struct %q", s2.Name())
 	//
 	// StructValue names must be the same
 	if s1.Name() != s2.Name() {
-		return nil, errors.Wrap(errors.Errorf("target struct name is invalid: want: '%s', got: '%s'", s1.Name(), s2.Name()), ctx)
+		return nil, errors.Wrap(errors.Errorf("target struct name is invalid: want: %q, got: %q", s1.Name(), s2.Name()), ctx)
 	}
 	//
 	// Both interfaces must be singulars of struct, not multiples
@@ -369,28 +386,69 @@ func ScanFromMap(dest interface{}, row map[string]interface{}, mapping map[strin
 		for destCol, srcCol := range mapping {
 			srcValue, ok := row[srcCol]
 			if !ok {
-				return errors.Errorf("could not find column '%s' in trusted source instance", srcCol)
+				return errors.Errorf("could not find column %q in trusted source instance", srcCol)
 			}
 			f := s.Field(destCol)
 			if err = s.Err(); err != nil {
-				return errors.Wrapf(err, "could not find column '%s' in %s", destCol, s.Name())
+				return errors.Wrapf(err, "could not find column %q in %s", destCol, s.Name())
 			}
 			err = f.Set(srcValue)
 			if err != nil {
-				return errors.Wrapf(err, "could not set column '%s' in %s", destCol, s.Name())
+				return errors.Wrapf(err, "could not set column %q in %s", destCol, s.Name())
 			}
 		}
 	} else {
 		for srcCol, srcValue := range row {
 			f := s.Field(srcCol)
 			if err = s.Err(); err != nil {
-				return errors.Wrapf(err, "could not find column '%s' in %s", srcCol, s.Name())
+				return errors.Wrapf(err, "could not find column %q in %s", srcCol, s.Name())
 			}
 			err = f.Set(srcValue)
 			if err != nil {
-				return errors.Wrapf(err, "could not set column '%s' in %s to %v", srcCol, s.Name(), srcValue)
+				return errors.Wrapf(err, "could not set column %q in %s to %v", srcCol, s.Name(), srcValue)
 			}
 		}
 	}
 	return nil
+}
+
+// Unmarshal parses the Go struct and stores the result
+// in the value pointed to by dest. If dest is nil or not a pointer,
+// Unmarshal returns an InvalidUnmarshalError.
+func Unmarhsal(src interface{}, dest *map[string]interface{}) error {
+	marshaled, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(marshaled, dest)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// TO REVISIT
+
+// Defaults ...
+func Defaults(dest interface{}) error {
+	// ctx will be the context error returned
+	// by this func if anything goes wrong
+	ctx := "could not initialize struct with defaults from struct tags"
+	// Source interface must be valid struct for this to work
+	// Target dest will be the recipient for a copy of src
+	s1, err := New(dest)
+	if err != nil {
+		return errors.Wrap(err, ctx)
+	}
+	// ctx content can now now be improved
+	ctx = fmt.Sprintf("could not initialize struct %q with defaults from struct tags", s1.Name())
+	// Target struct must be editable
+	if !s1.CanSet() {
+		return errors.Wrap(errors.Errorf("cannot edit struct %s", s1.Name()), ctx)
+	}
+	// Target must be singular of struct, not multiple
+	if s1.Multiple() {
+		return errors.Wrap(errors.Errorf("source is a slice of struct %s", s1.Name()), ctx)
+	}
+	return s1.Defaults()
 }

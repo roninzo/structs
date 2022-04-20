@@ -121,7 +121,7 @@ func TestHelperClone(t *testing.T) {
 		assert.Equal(t, true, clone.C)
 	default:
 		v := reflect.TypeOf(intf)
-		t.Errorf("invalid clone type; want: 'T1', got: '%s'", v.Kind())
+		t.Errorf("invalid clone type; want: 'T1', got: %q", v.Kind())
 	}
 }
 
@@ -151,7 +151,7 @@ func TestHelperForwardInvalidArgs(t *testing.T) {
 	s := 5
 	err := Forward(nil, &s)
 	assert.NotEqual(t, nil, err)
-	assert.Equal(t, "could not copy source non-zero values to target struct: 'int' is not a pointer", err.Error())
+	assert.Equal(t, "could not copy source non-zero values to target struct: \"int\" is not a pointer", err.Error())
 }
 
 func TestHelperForwardWithNestedStruct(t *testing.T) {

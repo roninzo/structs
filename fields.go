@@ -6,14 +6,14 @@ package structs
 
 /*   T y p e   d e f i n i t i o n   */
 
-// StructFields represents all struct fields that encapsulates high level functions around
-// the struct fields.
+// StructFields represents all struct fields that encapsulates
+// high level functions around the struct fields.
 type StructFields []*StructField
 
 /*   C o n s t r u c t o r   */
 
-// Fields returns all the fields of the struct in a slice.
-// This method is not recursive, which means that nested structs must be dealt with explicitly.
+// Fields returns all the fields of the struct in a slice. This method is not
+// recursive, which means that nested structs must be dealt with explicitly.
 func (s *StructValue) Fields() StructFields {
 	s.getFields()
 	return s.fieldsByIndex
@@ -21,8 +21,8 @@ func (s *StructValue) Fields() StructFields {
 
 /*   I m p l e m e n t a t i o n   */
 
-// Names returns all the field names of the struct.
-// This method is not recursive, which means that nested structs must be dealt with explicitly.
+// Names returns all the field names of the struct. This method is not
+// recursive, which means that nested structs must be dealt with explicitly.
 func (fields StructFields) Names() []string {
 	n := len(fields)
 	names := make([]string, n)
